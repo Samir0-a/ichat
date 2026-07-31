@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign In — I-Chat</title>
+<meta name="description" content="Sign in to I-Chat, a real-time messaging app." />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/auth.css" />
+<link rel="stylesheet" href="css/responsive.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+</head>
+<body>
+
+<button class="btn-icon theme-toggle-fixed glass" id="themeToggle" aria-label="Toggle dark and light mode">
+  <i class="fa-solid fa-moon"></i>
+</button>
+
+<div class="auth-page page-enter">
+
+  <!-- Brand panel -->
+  <div class="auth-brand">
+    <div class="signal-field" aria-hidden="true"><span></span><span></span><span></span></div>
+
+    <div class="auth-brand-top">
+      <div class="brand-logo">
+        <span class="logo-mark"><i class="fa-solid fa-bolt"></i></span>
+        I-Chat
+      </div>
+    </div>
+
+    <div class="auth-brand-mid">
+      <h1>Conversations that feel <span>instant.</span></h1>
+      <p>Real-time messaging with read receipts, typing indicators, and presence — built for teams and friends who don't wait around.</p>
+    </div>
+
+    <div class="auth-brand-bottom">
+      <div><strong>256-bit</strong>Encrypted in transit</div>
+      <div><strong>&lt;100ms</strong>Message delivery</div>
+      <div><strong>24/7</strong>Always in sync</div>
+    </div>
+  </div>
+
+  <!-- Form panel -->
+  <div class="auth-form-panel">
+    <div class="auth-form-card">
+      <div class="auth-heading">
+        <h2>Welcome back</h2>
+        <p>Sign in to keep the conversation going.</p>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <div class="field" id="emailField">
+          <label for="email">Email</label>
+          <div class="input-wrap">
+            <i class="fa-regular fa-envelope leading"></i>
+            <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+          <p class="field-error">Please enter a valid email address.</p>
+        </div>
+
+        <div class="field" id="passwordField">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-lock leading"></i>
+            <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required />
+            <button type="button" class="toggle-visibility" data-target="password" aria-label="Show password">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+          <p class="field-error">Password is required.</p>
+        </div>
+
+        <div class="remember-row">
+          <label class="checkbox-wrap">
+            <input type="checkbox" id="rememberMe" checked />
+            Remember me
+          </label>
+          <a href="#" class="link-accent" id="forgotPasswordLink">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="loginSubmitBtn">
+          <span id="loginBtnText">Sign In</span>
+        </button>
+      </form>
+
+      <div class="divider">or continue with</div>
+
+      <button type="button" class="oauth-btn" id="googleLoginBtn">
+        <i class="fa-brands fa-google" style="color:#EA4335"></i>
+        Sign in with Google
+      </button>
+
+      <p class="auth-switch">Don't have an account? <a href="register.html" class="link-accent">Create one</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- Forgot password panel -->
+<div class="overlay-scrim" id="resetScrim"></div>
+<div class="slide-panel" id="resetPanel" role="dialog" aria-label="Reset password">
+  <div class="slide-panel-header">
+    <h3>Reset your password</h3>
+    <button class="btn-icon" id="closeResetPanel" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="slide-panel-body">
+    <p class="text-dim" style="margin-bottom:18px;font-size:0.88rem;">Enter the email associated with your account and we'll send a link to reset your password.</p>
+    <div class="field">
+      <label for="resetEmail">Email</label>
+      <div class="input-wrap">
+        <i class="fa-regular fa-envelope leading"></i>
+        <input type="email" id="resetEmail" placeholder="you@example.com" />
+      </div>
+    </div>
+    <button class="btn btn-primary btn-block" id="sendResetBtn">Send reset link</button>
+  </div>
+</div>
+
+<script type="module">
+  import { loginUser, loginWithGoogle, sendResetEmail, redirectIfAuthed } from "./js/auth.js";
+  import { showToast, initTheme, toggleTheme, friendlyAuthError, isValidEmail } from "./js/utils.js";
+
+  initTheme();
+  redirectIfAuthed();
+
+  document.getElementById("themeToggle").addEventListener("click", () => {
+    const t = toggleTheme();
+    document.querySelector("#themeToggle i").className = t === "dark" ? "fa-solid fa-moon" : "fa-solid fa-sun";
+  });
+
+  // Password visibility toggle
+  document.querySelectorAll(".toggle-visibility").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const input = document.getElementById(btn.dataset.target);
+      const showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+      btn.querySelector("i").className = showing ? "fa-regular fa-eye" : "fa-regular fa-eye-slash";
+    });
+  });
+
+  // Login submit
+  const form = document.getElementById("loginForm");
+  const submitBtn = document.getElementById("loginSubmitBtn");
+  const btnText = document.getElementById("loginBtnText");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const remember = document.getElementById("rememberMe").checked;
+
+    document.getElementById("emailField").classList.toggle("has-error", !isValidEmail(email));
+    document.getElementById("passwordField").classList.toggle("has-error", !password);
+    if (!isValidEmail(email) || !password) return;
+
+    submitBtn.disabled = true;
+    btnText.innerHTML = '<span class="spinner"></span>';
+    try {
+      await loginUser({ email, password, remember });
+      showToast("Welcome back!", "success");
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      showToast(friendlyAuthError(err.code), "error");
+      submitBtn.disabled = false;
+      btnText.textContent = "Sign In";
+    }
+  });
+
+  // Google login
+  document.getElementById("googleLoginBtn").addEventListener("click", async () => {
+    try {
+      await loginWithGoogle();
+      showToast("Welcome!", "success");
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      showToast(friendlyAuthError(err.code), "error");
+    }
+  });
+
+  // Forgot password panel
+  const resetPanel = document.getElementById("resetPanel");
+  const resetScrim = document.getElementById("resetScrim");
+  const openReset = () => { resetPanel.classList.add("open"); resetScrim.classList.add("open"); };
+  const closeReset = () => { resetPanel.classList.remove("open"); resetScrim.classList.remove("open"); };
+
+  document.getElementById("forgotPasswordLink").addEventListener("click", (e) => { e.preventDefault(); openReset(); });
+  document.getElementById("closeResetPanel").addEventListener("click", closeReset);
+  resetScrim.addEventListener("click", closeReset);
+
+  document.getElementById("sendResetBtn").addEventListener("click", async () => {
+    const email = document.getElementById("resetEmail").value;
+    try {
+      await sendResetEmail(email);
+      showToast("Password reset link sent — check your inbox.", "success");
+      closeReset();
+    } catch (err) {
+      showToast(friendlyAuthError(err.code) || err.message, "error");
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>I-Chat</title>
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/chat.css" />
+<link rel="stylesheet" href="css/responsive.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+</head>
+<body>
+
+<div class="app-shell" id="appShell">
+
+  <!-- Icon rail -->
+  <aside class="app-rail">
+    <div class="logo-mark"><i class="fa-solid fa-bolt"></i></div>
+    <nav class="rail-nav">
+      <button class="rail-btn active rail-btn-messages" aria-label="Messages"><i class="fa-solid fa-message"></i></button>
+      <button class="rail-btn" id="notificationsBtn" aria-label="Notifications">
+        <i class="fa-regular fa-bell"></i>
+        <span class="rail-badge hidden" id="notifBadge">0</span>
+      </button>
+      <button class="rail-btn" aria-label="Friends"><i class="fa-solid fa-user-group"></i></button>
+      <button class="rail-btn" aria-label="Settings"><i class="fa-solid fa-gear"></i></button>
+    </nav>
+    <div class="rail-bottom">
+      <button class="btn-icon" id="themeToggle" aria-label="Toggle dark and light mode"><i class="fa-solid fa-moon"></i></button>
+      <button class="btn-icon" id="logoutBtn" aria-label="Log out"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+    </div>
+  </aside>
+
+  <!-- Sidebar: chat list -->
+  <aside class="app-sidebar">
+    <div class="sidebar-header">
+      <h1>Chats</h1>
+      <button class="btn-icon" id="newChatBtn" aria-label="Start new chat"><i class="fa-solid fa-pen-to-square"></i></button>
+    </div>
+    <div class="sidebar-search">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="chatSearchInput" placeholder="Search chats" aria-label="Search chats" />
+      </div>
+    </div>
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" data-filter="all">All</button>
+      <button class="sidebar-tab" data-filter="unread">Unread</button>
+    </div>
+
+    <ul class="chat-list" id="chatList">
+      <!-- populated by chat.js -->
+    </ul>
+
+    <div class="sidebar-footer">
+      <span class="avatar-ring offline" id="myAvatar"><div class="avatar-fallback">--</div></span>
+      <div class="sidebar-footer-info">
+        <div class="name" id="myName">Loading…</div>
+        <div class="status" id="myStatus">Setting up…</div>
+      </div>
+      <button class="btn-icon" id="profileBtn" aria-label="Edit profile"><i class="fa-regular fa-pen-to-square"></i></button>
+    </div>
+  </aside>
+
+  <!-- Chat window -->
+  <main class="chat-window" id="chatWindow">
+    <div class="chat-empty-state" id="emptyState">
+      <div class="icon-circle"><i class="fa-regular fa-comments"></i></div>
+      <h3>Select a conversation</h3>
+      <p>Pick a chat from the list, or start a new one to begin messaging in real time.</p>
+      <button class="btn btn-primary" id="emptyNewChatBtn"><i class="fa-solid fa-pen-to-square"></i> New chat</button>
+    </div>
+
+    <div id="activeChat" class="hidden" style="display:flex;flex-direction:column;height:100%;">
+      <div class="chat-header">
+        <button class="btn-icon chat-back-btn" id="chatBackBtn" aria-label="Back to chat list"><i class="fa-solid fa-arrow-left"></i></button>
+        <span class="avatar-ring offline" id="headerAvatar"><div class="avatar-fallback">--</div></span>
+        <div class="chat-header-info">
+          <div class="name" id="headerName">—</div>
+          <div class="subtext" id="headerSubtext">—</div>
+        </div>
+        <div class="chat-header-actions">
+          <button class="btn-icon" aria-label="Search in conversation"><i class="fa-solid fa-magnifying-glass"></i></button>
+          <button class="btn-icon" aria-label="More options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="messagesContainer"></div>
+
+      <div class="chat-composer">
+        <div class="reply-context hidden" id="replyContext">
+          <span id="replyContextText"></span>
+          <button class="btn-icon" id="cancelReplyBtn" aria-label="Cancel reply"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="composer-bar">
+          <button class="btn-icon" aria-label="Attach file"><i class="fa-solid fa-paperclip"></i></button>
+          <button class="btn-icon" aria-label="Add emoji"><i class="fa-regular fa-face-smile"></i></button>
+          <textarea id="messageInput" rows="1" placeholder="Type a message" aria-label="Message"></textarea>
+          <button class="send-btn" id="sendBtn" aria-label="Send message"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom tab bar (mobile only, Messenger-style) -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bottom-nav-btn active" id="navChatsBtn" aria-label="Chats"><i class="fa-solid fa-message"></i></button>
+    <button class="bottom-nav-btn" id="navNotifBtn" aria-label="Notifications">
+      <i class="fa-regular fa-bell"></i>
+      <span class="rail-badge hidden" id="navNotifBadge">0</span>
+    </button>
+    <button class="bottom-nav-btn" id="navNewChatBtn" aria-label="New chat"><i class="fa-solid fa-pen-to-square"></i></button>
+    <button class="bottom-nav-btn" id="navMenuBtn" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+  </nav>
+</div>
+
+<!-- New chat panel -->
+<div class="overlay-scrim" id="newChatScrim"></div>
+<div class="slide-panel" id="newChatPanel" role="dialog" aria-label="Start a new chat">
+  <div class="slide-panel-header">
+    <h3>New chat</h3>
+    <button class="btn-icon" id="closeNewChatPanel" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="slide-panel-body">
+    <div class="search-box" style="margin-bottom:14px;">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="userSearchInput" placeholder="Search by username" aria-label="Search users" />
+    </div>
+    <div id="userSearchResults"></div>
+  </div>
+</div>
+
+<!-- Mobile menu panel (theme + logout — desktop rail is hidden on phones) -->
+<div class="overlay-scrim" id="menuScrim"></div>
+<div class="slide-panel" id="menuPanel" role="dialog" aria-label="Menu">
+  <div class="slide-panel-header">
+    <h3>Menu</h3>
+    <button class="btn-icon" id="closeMenuPanel" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="slide-panel-body">
+    <div class="sidebar-footer" style="border:none;padding:6px 4px 20px;">
+      <span class="avatar-ring offline" id="menuAvatar"><div class="avatar-fallback">--</div></span>
+      <div class="sidebar-footer-info">
+        <div class="name" id="menuName">Loading…</div>
+        <div class="status" id="menuStatus">Setting up…</div>
+      </div>
+    </div>
+    <button class="btn btn-secondary btn-block" id="menuThemeToggle" style="margin-bottom:10px;">
+      <i class="fa-solid fa-moon"></i> Toggle dark / light mode
+    </button>
+    <button class="btn btn-secondary btn-block" id="menuLogoutBtn">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i> Log out
+    </button>
+  </div>
+</div>
+
+<script type="module">
+  import { requireAuth, logoutUser } from "./js/auth.js";
+  import {
+    getUserProfile, listenToUser, searchUsers, listenToChatList,
+    startOrGetChat, getOtherParticipant, listenToMessages, sendMessage,
+    deleteMessageForEveryone, markMessagesRead, setTypingStatus
+  } from "./js/chat.js";
+  import {
+    showToast, initTheme, toggleTheme, avatarRingHTML, formatTime, formatDay,
+    formatLastSeen, escapeHTML, debounce, initials
+  } from "./js/utils.js";
+
+  initTheme();
+  document.querySelector("#themeToggle i").className =
+    document.documentElement.getAttribute("data-theme") === "dark" ? "fa-solid fa-moon" : "fa-solid fa-sun";
+  document.getElementById("themeToggle").addEventListener("click", () => {
+    const t = toggleTheme();
+    document.querySelector("#themeToggle i").className = t === "dark" ? "fa-solid fa-moon" : "fa-solid fa-sun";
+  });
+
+  let me = null;
+  let myProfile = null;
+  let chats = [];
+  let userCache = {};
+  let activeChatId = null;
+  let activeOtherUid = null;
+  let unsubMessages = null;
+  let unsubActiveUser = null;
+  let replyTarget = null;
+  let typingTimeout = null;
+
+  async function cachedUser(uid) {
+    if (userCache[uid]) return userCache[uid];
+    const profile = await getUserProfile(uid);
+    userCache[uid] = profile;
+    return profile;
+  }
+
+  requireAuth(async (user) => {
+    me = user;
+    myProfile = await getUserProfile(user.uid);
+    renderMyProfile();
+    listenToChatList(user.uid, renderChatList);
+  });
+
+  function renderMyProfile() {
+    document.getElementById("myAvatar").outerHTML = avatarRingHTML({
+      photoURL: myProfile?.profileImage, name: myProfile?.name || me.email, online: true, size: 40
+    }).replace('class="avatar-ring', 'id="myAvatar" class="avatar-ring');
+    document.getElementById("myName").textContent = myProfile?.name || "You";
+    document.getElementById("myStatus").textContent = myProfile?.status || "Online";
+
+    document.getElementById("menuAvatar").outerHTML = avatarRingHTML({
+      photoURL: myProfile?.profileImage, name: myProfile?.name || me.email, online: true, size: 44
+    }).replace('class="avatar-ring', 'id="menuAvatar" class="avatar-ring');
+    document.getElementById("menuName").textContent = myProfile?.name || "You";
+    document.getElementById("menuStatus").textContent = myProfile?.status || "Online";
+  }
+
+  async function renderChatList(list) {
+    chats = list;
+    const container = document.getElementById("chatList");
+    if (!list.length) {
+      container.innerHTML = `<li class="text-dim" style="padding:24px 12px;text-align:center;font-size:0.85rem;">No chats yet. Tap <i class="fa-solid fa-pen-to-square"></i> to start one.</li>`;
+      return;
+    }
+    const rows = await Promise.all(list.map(async (chat) => {
+      const otherUid = getOtherParticipant(chat, me.uid);
+      const other = await cachedUser(otherUid);
+      const unread = (chat.unread && chat.unread[me.uid]) || 0;
+      const isMine = chat.lastMessageSender === me.uid;
+      return `
+        <li class="chat-item ${chat.id === activeChatId ? "active" : ""}" data-chat-id="${chat.id}" data-other-uid="${otherUid}">
+          ${avatarRingHTML({ photoURL: other?.profileImage, name: other?.name, online: other?.online, size: 48 })}
+          <div class="chat-item-body">
+            <div class="chat-item-top">
+              <span class="chat-item-name">${escapeHTML(other?.name || "Unknown user")}</span>
+              <span class="chat-item-time">${chat.updatedAt ? formatTime(chat.updatedAt) : ""}</span>
+            </div>
+            <div class="chat-item-preview">
+              ${isMine ? '<i class="fa-solid fa-check-double"></i>' : ""}
+              <span>${escapeHTML(chat.lastMessage || "Say hello 👋")}</span>
+            </div>
+          </div>
+          ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ""}
+        </li>`;
+    }));
+    container.innerHTML = rows.join("");
+    container.querySelectorAll(".chat-item").forEach(el => {
+      el.addEventListener("click", () => openChat(el.dataset.chatId, el.dataset.otherUid));
+    });
+    updateNotifBadge();
+  }
+
+  function updateNotifBadge() {
+    const total = chats.reduce((sum, c) => sum + ((c.unread && c.unread[me.uid]) || 0), 0);
+    const badge = document.getElementById("notifBadge");
+    badge.textContent = total;
+    badge.classList.toggle("hidden", total === 0);
+    const mobileBadge = document.getElementById("navNotifBadge");
+    mobileBadge.textContent = total;
+    mobileBadge.classList.toggle("hidden", total === 0);
+  }
+
+  async function openChat(chatId, otherUid) {
+    activeChatId = chatId;
+    activeOtherUid = otherUid;
+    document.getElementById("appShell").classList.add("chat-open");
+    document.getElementById("emptyState").classList.add("hidden");
+    document.getElementById("activeChat").classList.remove("hidden");
+    document.getElementById("activeChat").style.display = "flex";
+
+    document.querySelectorAll(".chat-item").forEach(el => el.classList.toggle("active", el.dataset.chatId === chatId));
+
+    const other = await cachedUser(otherUid);
+    renderHeader(other);
+
+    if (unsubActiveUser) unsubActiveUser();
+    unsubActiveUser = listenToUser(otherUid, (u) => { userCache[otherUid] = u; renderHeader(u); });
+
+    if (unsubMessages) unsubMessages();
+    unsubMessages = listenToMessages(chatId, (msgs) => {
+      renderMessages(msgs, other);
+      markMessagesRead(chatId, me.uid);
+    });
+  }
+
+  function renderHeader(other) {
+    document.getElementById("headerAvatar").outerHTML = avatarRingHTML({
+      photoURL: other?.profileImage, name: other?.name, online: other?.online, size: 42
+    }).replace('class="avatar-ring', 'id="headerAvatar" class="avatar-ring');
+    document.getElementById("headerName").textContent = other?.name || "Unknown user";
+    const typingActive = chats.find(c => c.id === activeChatId)?.typing?.[activeOtherUid];
+    document.getElementById("headerSubtext").textContent = typingActive
+      ? "typing…"
+      : (other?.online ? "Online" : formatLastSeen(other?.lastSeen));
+  }
+
+  function renderMessages(msgs, other) {
+    const container = document.getElementById("messagesContainer");
+    let html = "";
+    let lastDay = null;
+    let lastSender = null;
+
+    msgs.forEach((msg) => {
+      const day = formatDay(msg.timestamp);
+      if (day !== lastDay) {
+        html += `<div class="msg-day-divider"><span>${day}</span></div>`;
+        lastDay = day;
+        lastSender = null;
+      }
+      const isOwn = msg.senderId === me.uid;
+      const grouped = lastSender === msg.senderId;
+      lastSender = msg.senderId;
+      const senderProfile = isOwn ? myProfile : other;
+
+      html += `
+        <div class="msg-row ${isOwn ? "own" : ""} ${grouped ? "grouped" : ""}" data-msg-id="${msg.id}">
+          ${avatarRingHTML({ photoURL: senderProfile?.profileImage, name: senderProfile?.name, online: false, size: 30 })}
+          <div>
+            <div class="msg-bubble">
+              ${msg.replyTo ? `<div class="msg-reply-preview">${escapeHTML(msg.replyTo)}</div>` : ""}
+              <span>${msg.type === "deleted" ? `<i>${escapeHTML(msg.message)}</i>` : escapeHTML(msg.message)}</span>
+              <div class="msg-meta">
+                ${msg.edited ? "<span>edited</span>" : ""}
+                <span>${formatTime(msg.timestamp)}</span>
+                ${isOwn ? `<i class="fa-solid ${msg.read ? "fa-check-double" : "fa-check"}"></i>` : ""}
+              </div>
+            </div>
+            <div class="msg-actions">
+              <button class="msg-reply" title="Reply"><i class="fa-solid fa-reply"></i></button>
+              <button class="msg-copy" title="Copy"><i class="fa-regular fa-copy"></i></button>
+              ${isOwn && msg.type !== "deleted" ? '<button class="msg-delete" title="Delete"><i class="fa-regular fa-trash-can"></i></button>' : ""}
+            </div>
+          </div>
+        </div>`;
+    });
+
+    const wasNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+    container.innerHTML = html;
+    if (wasNearBottom || msgs.length <= 1) container.scrollTop = container.scrollHeight;
+
+    container.querySelectorAll(".msg-row").forEach(row => {
+      const id = row.dataset.msgId;
+      const msg = msgs.find(m => m.id === id);
+      row.querySelector(".msg-copy")?.addEventListener("click", () => {
+        navigator.clipboard.writeText(msg.message);
+        showToast("Message copied", "success", 1800);
+      });
+      row.querySelector(".msg-reply")?.addEventListener("click", () => setReplyTarget(msg.message));
+      row.querySelector(".msg-delete")?.addEventListener("click", async () => {
+        await deleteMessageForEveryone(activeChatId, id);
+        showToast("Message deleted", "info", 1800);
+      });
+    });
+  }
+
+  function setReplyTarget(text) {
+    replyTarget = text;
+    const ctx = document.getElementById("replyContext");
+    ctx.classList.remove("hidden");
+    document.getElementById("replyContextText").textContent = `Replying to: ${text.slice(0, 60)}`;
+    document.getElementById("messageInput").focus();
+  }
+  document.getElementById("cancelReplyBtn").addEventListener("click", () => {
+    replyTarget = null;
+    document.getElementById("replyContext").classList.add("hidden");
+  });
+
+  // Composer: send + typing indicator
+  const input = document.getElementById("messageInput");
+  const sendBtn = document.getElementById("sendBtn");
+
+  input.addEventListener("input", () => {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 120) + "px";
+    if (!activeChatId) return;
+    setTypingStatus(activeChatId, me.uid, true);
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => setTypingStatus(activeChatId, me.uid, false), 2000);
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doSend(); }
+  });
+  sendBtn.addEventListener("click", doSend);
+
+  async function doSend() {
+    const text = input.value.trim();
+    if (!text || !activeChatId) return;
+    input.value = "";
+    input.style.height = "auto";
+    clearTimeout(typingTimeout);
+    setTypingStatus(activeChatId, me.uid, false);
+    const reply = replyTarget;
+    replyTarget = null;
+    document.getElementById("replyContext").classList.add("hidden");
+    try {
+      await sendMessage(activeChatId, me.uid, activeOtherUid, text, reply);
+    } catch {
+      showToast("Message failed to send", "error");
+    }
+  }
+
+  // Mobile back button
+  document.getElementById("chatBackBtn").addEventListener("click", () => {
+    document.getElementById("appShell").classList.remove("chat-open");
+  });
+
+  // New chat panel
+  const newChatPanel = document.getElementById("newChatPanel");
+  const newChatScrim = document.getElementById("newChatScrim");
+  const openNewChat = () => { newChatPanel.classList.add("open"); newChatScrim.classList.add("open"); document.getElementById("userSearchInput").focus(); };
+  const closeNewChat = () => { newChatPanel.classList.remove("open"); newChatScrim.classList.remove("open"); };
+  document.getElementById("newChatBtn").addEventListener("click", openNewChat);
+  document.getElementById("emptyNewChatBtn").addEventListener("click", openNewChat);
+  document.getElementById("closeNewChatPanel").addEventListener("click", closeNewChat);
+  newChatScrim.addEventListener("click", closeNewChat);
+
+  const runUserSearch = debounce(async (term) => {
+    const results = document.getElementById("userSearchResults");
+    if (!term) { results.innerHTML = ""; return; }
+    const users = await searchUsers(term, me.uid);
+    if (!users.length) { results.innerHTML = `<p class="text-dim" style="padding:12px;font-size:0.85rem;">No users found.</p>`; return; }
+    results.innerHTML = users.map(u => `
+      <div class="user-search-result" data-uid="${u.uid}">
+        ${avatarRingHTML({ photoURL: u.profileImage, name: u.name, online: u.online, size: 42 })}
+        <div class="user-search-result-info">
+          <div class="name">${escapeHTML(u.name)}</div>
+          <div class="username">@${escapeHTML(u.username)}</div>
+        </div>
+      </div>`).join("");
+    results.querySelectorAll(".user-search-result").forEach(el => {
+      el.addEventListener("click", async () => {
+        const chatId = await startOrGetChat(me.uid, el.dataset.uid);
+        closeNewChat();
+        openChat(chatId, el.dataset.uid);
+      });
+    });
+  }, 350);
+  document.getElementById("userSearchInput").addEventListener("input", (e) => runUserSearch(e.target.value));
+
+  // Sidebar chat search filter
+  document.getElementById("chatSearchInput").addEventListener("input", (e) => {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll(".chat-item").forEach(el => {
+      const name = el.querySelector(".chat-item-name").textContent.toLowerCase();
+      el.style.display = name.includes(term) ? "" : "none";
+    });
+  });
+
+  // Unread filter tab
+  document.querySelectorAll(".sidebar-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".sidebar-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      const showUnreadOnly = tab.dataset.filter === "unread";
+      document.querySelectorAll(".chat-item").forEach(el => {
+        const chat = chats.find(c => c.id === el.dataset.chatId);
+        const unread = (chat?.unread && chat.unread[me.uid]) || 0;
+        el.style.display = (!showUnreadOnly || unread > 0) ? "" : "none";
+      });
+    });
+  });
+
+  // Logout
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    await logoutUser();
+    window.location.href = "index.html";
+  });
+
+  // Notification bell — placeholder until a full notifications panel exists
+  document.getElementById("notificationsBtn").addEventListener("click", () => {
+    showToast("Notifications panel is coming soon.", "info", 2200);
+  });
+  document.getElementById("navNotifBtn").addEventListener("click", () => {
+    showToast("Notifications panel is coming soon.", "info", 2200);
+  });
+
+  // Bottom nav: Chats tab — closes an open conversation to reveal the chat list
+  document.getElementById("navChatsBtn").addEventListener("click", () => {
+    document.getElementById("appShell").classList.remove("chat-open");
+  });
+
+  // Bottom nav: New chat
+  document.getElementById("navNewChatBtn").addEventListener("click", openNewChat);
+
+  // Bottom nav: Menu (theme toggle + logout, since the desktop rail is hidden on phones)
+  const menuPanel = document.getElementById("menuPanel");
+  const menuScrim = document.getElementById("menuScrim");
+  document.getElementById("navMenuBtn").addEventListener("click", () => {
+    menuPanel.classList.add("open");
+    menuScrim.classList.add("open");
+  });
+  const closeMenu = () => { menuPanel.classList.remove("open"); menuScrim.classList.remove("open"); };
+  document.getElementById("closeMenuPanel").addEventListener("click", closeMenu);
+  menuScrim.addEventListener("click", closeMenu);
+
+  document.getElementById("menuThemeToggle").addEventListener("click", () => {
+    const t = toggleTheme();
+    document.querySelector("#themeToggle i").className = t === "dark" ? "fa-solid fa-moon" : "fa-solid fa-sun";
+  });
+  document.getElementById("menuLogoutBtn").addEventListener("click", async () => {
+    await logoutUser();
+    window.location.href = "index.html";
+  });
+</script>
+</body>
+</html>

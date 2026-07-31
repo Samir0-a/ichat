@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Create Account — I-Chat</title>
+<meta name="description" content="Create your I-Chat account." />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/auth.css" />
+<link rel="stylesheet" href="css/responsive.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+</head>
+<body>
+
+<button class="btn-icon theme-toggle-fixed glass" id="themeToggle" aria-label="Toggle dark and light mode">
+  <i class="fa-solid fa-moon"></i>
+</button>
+
+<div class="auth-page page-enter">
+
+  <div class="auth-brand">
+    <div class="signal-field" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="auth-brand-top">
+      <div class="brand-logo">
+        <span class="logo-mark"><i class="fa-solid fa-bolt"></i></span>
+        I-Chat
+      </div>
+    </div>
+    <div class="auth-brand-mid">
+      <h1>Join the conversation <span>in seconds.</span></h1>
+      <p>Create your profile, find your people, and start messaging instantly — no clutter, no noise.</p>
+    </div>
+    <div class="auth-brand-bottom">
+      <div><strong>Free</strong>No credit card needed</div>
+      <div><strong>1-click</strong>Google sign-up</div>
+    </div>
+  </div>
+
+  <div class="auth-form-panel">
+    <div class="auth-form-card">
+      <div class="auth-heading">
+        <h2>Create your account</h2>
+        <p>It only takes a minute.</p>
+      </div>
+
+      <form id="registerForm" novalidate>
+
+        <div class="avatar-upload">
+          <div class="avatar-upload-preview" id="avatarPreview"><i class="fa-solid fa-camera"></i></div>
+          <div>
+            <label class="avatar-upload-btn" for="photoInput">Add profile picture</label>
+            <p class="field-hint">Optional, PNG or JPG</p>
+            <input type="file" id="photoInput" accept="image/png, image/jpeg" />
+          </div>
+        </div>
+
+        <div class="field" id="fullNameField">
+          <label for="fullName">Full name</label>
+          <div class="input-wrap">
+            <i class="fa-regular fa-user leading"></i>
+            <input type="text" id="fullName" placeholder="Your Name" autocomplete="name" required />
+          </div>
+          <p class="field-error">Please enter your full name.</p>
+        </div>
+
+        <div class="field" id="usernameField">
+          <label for="username">Username</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-at leading"></i>
+            <input type="text" id="username" placeholder="user1" autocomplete="username" required />
+          </div>
+          <p class="field-error">3-20 characters: letters, numbers, underscore only.</p>
+        </div>
+
+        <div class="field" id="regEmailField">
+          <label for="regEmail">Email</label>
+          <div class="input-wrap">
+            <i class="fa-regular fa-envelope leading"></i>
+            <input type="email" id="regEmail" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+          <p class="field-error">Please enter a valid email address.</p>
+        </div>
+
+        <div class="form-row-split">
+          <div class="field" id="regPasswordField">
+            <label for="regPassword">Password</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-lock leading"></i>
+              <input type="password" id="regPassword" placeholder="••••••••" autocomplete="new-password" required />
+            </div>
+            <p class="field-error">At least 6 characters.</p>
+          </div>
+
+          <div class="field" id="confirmPasswordField">
+            <label for="confirmPassword">Confirm</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-lock leading"></i>
+              <input type="password" id="confirmPassword" placeholder="••••••••" autocomplete="new-password" required />
+            </div>
+            <p class="field-error">Passwords must match.</p>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="registerSubmitBtn" style="margin-top:6px;">
+          <span id="registerBtnText">Create Account</span>
+        </button>
+      </form>
+
+      <div class="divider">or continue with</div>
+
+      <button type="button" class="oauth-btn" id="googleRegisterBtn">
+        <i class="fa-brands fa-google" style="color:#EA4335"></i>
+        Sign up with Google
+      </button>
+
+      <p class="auth-switch">Already have an account? <a href="index.html" class="link-accent">Sign in</a></p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { registerUser, loginWithGoogle, redirectIfAuthed } from "./js/auth.js";
+  import { showToast, initTheme, toggleTheme, friendlyAuthError, isValidEmail, isValidUsername } from "./js/utils.js";
+
+  initTheme();
+  redirectIfAuthed();
+
+  document.getElementById("themeToggle").addEventListener("click", () => {
+    const t = toggleTheme();
+    document.querySelector("#themeToggle i").className = t === "dark" ? "fa-solid fa-moon" : "fa-solid fa-sun";
+  });
+
+  // Avatar preview
+  let photoFile = null;
+  const photoInput = document.getElementById("photoInput");
+  const preview = document.getElementById("avatarPreview");
+  photoInput.addEventListener("change", () => {
+    const file = photoInput.files[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      showToast("Image must be under 3MB.", "warning");
+      photoInput.value = "";
+      return;
+    }
+    photoFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => { preview.innerHTML = `<img src="${e.target.result}" alt="Profile preview" />`; };
+    reader.readAsDataURL(file);
+  });
+
+  const form = document.getElementById("registerForm");
+  const submitBtn = document.getElementById("registerSubmitBtn");
+  const btnText = document.getElementById("registerBtnText");
+
+  function setError(fieldId, condition) {
+    document.getElementById(fieldId).classList.toggle("has-error", !condition);
+    return condition;
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const fullName = document.getElementById("fullName").value.trim();
+    const username = document.getElementById("username").value.trim();
+    const email = document.getElementById("regEmail").value.trim();
+    const password = document.getElementById("regPassword").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+
+    const ok = [
+      setError("fullNameField", fullName.length >= 2),
+      setError("usernameField", isValidUsername(username)),
+      setError("regEmailField", isValidEmail(email)),
+      setError("regPasswordField", password.length >= 6),
+      setError("confirmPasswordField", password === confirmPassword && password.length > 0)
+    ].every(Boolean);
+    if (!ok) return;
+
+    submitBtn.disabled = true;
+    btnText.innerHTML = '<span class="spinner"></span>';
+
+    try {
+      await registerUser({ fullName, username, email, password, confirmPassword, photoFile });
+      showToast("Account created! Check your inbox to verify your email.", "success", 5000);
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      showToast(err.code ? friendlyAuthError(err.code) : err.message, "error");
+      submitBtn.disabled = false;
+      btnText.textContent = "Create Account";
+    }
+  });
+
+  document.getElementById("googleRegisterBtn").addEventListener("click", async () => {
+    try {
+      await loginWithGoogle();
+      showToast("Welcome to I-Chat!", "success");
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      showToast(friendlyAuthError(err.code), "error");
+    }
+  });
+</script>
+</body>
+</html>

@@ -182,11 +182,12 @@
       await registerUser({ fullName, username, email, password, confirmPassword, photoFile });
       showToast("Account created! Check your inbox to verify your email.", "success", 5000);
       window.location.href = "dashboard.html";
-    } catch (err) {
-      showToast(err.code ? friendlyAuthError(err.code) : err.message, "error");
-      submitBtn.disabled = false;
-      btnText.textContent = "Create Account";
-    }
+     } catch (err) {
+  console.error("Registration error:", err.code, err.message, err);
+  showToast(err.code ? friendlyAuthError(err.code) : err.message, "error");
+  submitBtn.disabled = false;
+  btnText.textContent = "Create Account";
+  }
   });
 
   document.getElementById("googleRegisterBtn").addEventListener("click", async () => {

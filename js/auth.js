@@ -68,6 +68,7 @@ export async function registerUser({ fullName, username, email, password, confir
   await step("write users/{uid} profile doc", () => setDoc(doc(db, "users", user.uid), {
     uid: user.uid,
     name: fullName,
+    nameLower: fullName.toLowerCase(),
     username,
     email,
     profileImage: photoURL,
@@ -124,9 +125,11 @@ export async function loginWithGoogle() {
       n += 1;
       username = `${baseUsername}${n}`;
     }
+    const displayName = user.displayName || "New User";
     await setDoc(userRef, {
       uid: user.uid,
-      name: user.displayName || "New User",
+      name: displayName,
+      nameLower: displayName.toLowerCase(),
       username,
       email: user.email,
       profileImage: user.photoURL || "",
@@ -183,13 +186,85 @@ export function attachPresenceHandlers(uid) {
   setInterval(() => { if (!document.hidden) goOnline(); }, 60000);
 }
 
+/** Ensures that an existing user's document in Firestore has name, nameLower, username, and email fields. */
+export async function ensureUserProfile(user) {
+  if (!user || !user.uid) return;
+  try {
+    const userRef = doc(db, "users", user.uid);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) {
+      // Do NOT auto-create a document when snap doesn't exist yet,
+      // as registerUser() or loginWithGoogle() is currently building it.
+      return;
+    }
+    const data = snap.data();
+    const updates = {};
+    
+    if (user.displayName && (!data.name || data.name === (user.email ? user.email.split("@")[0] : "") || data.name.startsWith("User "))) {
+      updates.name = user.displayName;
+      updates.nameLower = user.displayName.toLowerCase();
+    } else if (!data.name) {
+      const fallbackName = user.displayName || (user.email ? user.email.split("@")[0] : "User");
+      updates.name = fallbackName;
+      updates.nameLower = fallbackName.toLowerCase();
+    } else if (!data.nameLower) {
+      updates.nameLower = data.name.toLowerCase();
+    }
+
+    if (!data.username) {
+      const fallbackUsername = (user.email ? user.email.split("@")[0] : `user_${user.uid.slice(0, 5)}`).toLowerCase().replace(/[^a-z0-9_]/g, "");
+      updates.username = fallbackUsername;
+      await setDoc(doc(db, "usernames", fallbackUsername), { uid: user.uid }, { merge: true });
+    }
+
+    if (!data.email && user.email) {
+      updates.email = user.email;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await setDoc(userRef, updates, { merge: true });
+      console.log(`[ensureUserProfile] Repaired missing fields for ${user.uid}:`, updates);
+    }
+  } catch (err) {
+    console.warn("[ensureUserProfile] Repair warning:", err.message);
+  }
+}
+
+/** Updates user profile (name, username, status, profileImage). */
+export async function updateUserProfile(uid, { name, username, status, profileImage }) {
+  const userRef = doc(db, "users", uid);
+  const snap = await getDoc(userRef);
+  const current = snap.exists() ? snap.data() : {};
+  
+  const updates = {};
+  if (name !== undefined) {
+    updates.name = sanitizeInput(name);
+    updates.nameLower = updates.name.toLowerCase();
+  }
+  if (username !== undefined) {
+    const cleanUser = sanitizeInput(username).toLowerCase();
+    if (cleanUser !== current.username) {
+      if (await isUsernameTaken(cleanUser)) throw new Error("That username is already taken.");
+      updates.username = cleanUser;
+      await setDoc(doc(db, "usernames", cleanUser), { uid });
+    }
+  }
+  if (status !== undefined) updates.status = sanitizeInput(status);
+  if (profileImage !== undefined) updates.profileImage = profileImage;
+
+  if (Object.keys(updates).length > 0) {
+    await updateDoc(userRef, updates);
+  }
+}
+
 /** Call on protected pages (dashboard, profile, settings). Redirects to login if signed out. */
 export function requireAuth(onReady) {
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (!user) {
       window.location.href = "index.html";
       return;
     }
+    await ensureUserProfile(user);
     attachPresenceHandlers(user.uid);
     onReady(user);
   });

@@ -35,44 +35,84 @@ export function listenToUser(uid, callback) {
   });
 }
 
-/** Search users by username or name prefix (excludes the current user). */
+/** Search users by username, display name, or email (excludes the current user). */
 export async function searchUsers(term, currentUid) {
-  const cleaned = sanitizeInput(term).toLowerCase();
+  let cleaned = sanitizeInput(term).trim();
+  if (cleaned.startsWith("@")) cleaned = cleaned.slice(1);
+  cleaned = cleaned.toLowerCase();
   if (!cleaned) return [];
 
+  console.log(`[searchUsers] Searching for: "${cleaned}" (currentUid: ${currentUid})`);
   const results = new Map();
+  const titleCaseTerm = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 
   try {
-    // Strategy 1: Search by username prefix
-    const q1 = query(
-      collection(db, "users"),
-      where("username", ">=" , cleaned),
-      where("username", "<=", cleaned + "\uf8ff"),
-      limit(15)
-    );
-    const snap1 = await getDocs(q1);
-    snap1.docs.forEach(d => {
-      const data = d.data();
-      if (data.uid !== currentUid) results.set(data.uid, data);
-    });
+    const queries = [
+      // 1. Username prefix search
+      { label: "username", q: query(collection(db, "users"), where("username", ">=", cleaned), where("username", "<=", cleaned + "\uf8ff"), limit(15)) },
+      // 2. Normalized lowercased name search
+      { label: "nameLower", q: query(collection(db, "users"), where("nameLower", ">=", cleaned), where("nameLower", "<=", cleaned + "\uf8ff"), limit(15)) },
+      // 3. Title-case display name search (legacy fallback)
+      { label: "nameTitleCase", q: query(collection(db, "users"), where("name", ">=", titleCaseTerm), where("name", "<=", titleCaseTerm + "\uf8ff"), limit(15)) },
+      // 4. Email prefix search
+      { label: "email", q: query(collection(db, "users"), where("email", ">=", cleaned), where("email", "<=", cleaned + "\uf8ff"), limit(15)) }
+    ];
 
-    // Strategy 2: Search by display name prefix
-    const q2 = query(
-      collection(db, "users"),
-      where("name", ">=" , cleaned),
-      where("name", "<=", cleaned + "\uf8ff"),
-      limit(15)
-    );
-    const snap2 = await getDocs(q2);
-    snap2.docs.forEach(d => {
-      const data = d.data();
-      if (data.uid !== currentUid) results.set(data.uid, data);
+    const snapshots = await Promise.allSettled(queries.map(item => getDocs(item.q)));
+
+    snapshots.forEach((res, idx) => {
+      const label = queries[idx].label;
+      if (res.status === "fulfilled" && res.value) {
+        console.log(`[searchUsers] Query "${label}" matched ${res.value.docs.length} docs`);
+        res.value.docs.forEach(d => {
+          const data = d.data();
+          const targetUid = data.uid || d.id;
+          if (targetUid && (!currentUid || targetUid !== currentUid)) {
+            data.uid = targetUid;
+            data.name = data.name || data.username || `User ${targetUid.slice(0, 4)}`;
+            data.username = data.username || `user_${targetUid.slice(0, 4)}`;
+            results.set(targetUid, data);
+          }
+        });
+      } else if (res.status === "rejected") {
+        console.warn(`[searchUsers] Query "${label}" failed:`, res.reason);
+      }
     });
   } catch (err) {
-    console.warn("User search failed (indexes may be missing):", err.message);
-    throw err;
+    console.error("[searchUsers] Unexpected error executing queries:", err);
   }
 
+  // Client-side fallback: if indexed prefix queries return no results, fetch recent users and filter
+  if (results.size === 0) {
+    console.log("[searchUsers] Indexed queries returned 0 results. Running fallback user scan...");
+    try {
+      const fallbackSnap = await getDocs(query(collection(db, "users"), limit(50)));
+      console.log(`[searchUsers] Fallback scan fetched ${fallbackSnap.docs.length} total user docs from Firestore`);
+      fallbackSnap.docs.forEach(d => {
+        const data = d.data();
+        const targetUid = data.uid || d.id;
+        if (!targetUid || (currentUid && targetUid === currentUid)) return;
+        
+        data.uid = targetUid;
+        data.name = data.name || data.username || `User ${targetUid.slice(0, 4)}`;
+        data.username = data.username || `user_${targetUid.slice(0, 4)}`;
+        data.email = data.email || "";
+
+        const uName = data.name.toLowerCase();
+        const uUser = data.username.toLowerCase();
+        const uEmail = data.email.toLowerCase();
+        
+        if (uName.includes(cleaned) || uUser.includes(cleaned) || uEmail.includes(cleaned) || cleaned === "user" || cleaned === "all") {
+          results.set(targetUid, data);
+        }
+      });
+    } catch (fallbackErr) {
+      console.error("[searchUsers] Fallback search failed (check Firestore Security Rules):", fallbackErr);
+      throw fallbackErr;
+    }
+  }
+
+  console.log(`[searchUsers] Returning ${results.size} final matching users.`);
   return Array.from(results.values()).slice(0, 15);
 }
 

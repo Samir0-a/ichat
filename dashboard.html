@@ -187,8 +187,35 @@
   </div>
 </div>
 
+<!-- Edit profile panel -->
+<div class="overlay-scrim" id="profileScrim"></div>
+<div class="slide-panel" id="profilePanel" role="dialog" aria-label="Edit Profile">
+  <div class="slide-panel-header">
+    <h3>Edit profile</h3>
+    <button class="btn-icon" id="closeProfilePanel" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="slide-panel-body">
+    <form id="editProfileForm">
+      <div class="field" style="margin-bottom:16px;">
+        <label for="editFullName" style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:6px;">Full Name</label>
+        <input type="text" id="editFullName" class="input-wrap" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border,#333);background:var(--bg-card,#1e1e1e);color:inherit;" required />
+      </div>
+      <div class="field" style="margin-bottom:16px;">
+        <label for="editUsername" style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:6px;">Username</label>
+        <input type="text" id="editUsername" class="input-wrap" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border,#333);background:var(--bg-card,#1e1e1e);color:inherit;" required />
+      </div>
+      <div class="field" style="margin-bottom:20px;">
+        <label for="editStatus" style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:6px;">Status Message</label>
+        <input type="text" id="editStatus" class="input-wrap" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border,#333);background:var(--bg-card,#1e1e1e);color:inherit;" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="saveProfileBtn">Save changes</button>
+    </form>
+  </div>
+</div>
+
 <script type="module">
-  import { requireAuth, logoutUser } from "./js/auth.js";
+  console.log("[I-Chat] Script module loaded");
+  import { requireAuth, logoutUser, updateUserProfile } from "./js/auth.js";
   import {
     getUserProfile, listenToUser, searchUsers, listenToChatList,
     startOrGetChat, getOtherParticipant, listenToMessages, sendMessage,
@@ -472,11 +499,56 @@
   document.getElementById("closeNewChatPanel").addEventListener("click", closeNewChat);
   newChatScrim.addEventListener("click", closeNewChat);
 
+  // Edit profile panel
+  const profilePanel = document.getElementById("profilePanel");
+  const profileScrim = document.getElementById("profileScrim");
+  const openProfile = () => {
+    document.getElementById("editFullName").value = myProfile?.name || me.displayName || "";
+    document.getElementById("editUsername").value = myProfile?.username || "";
+    document.getElementById("editStatus").value = myProfile?.status || "";
+    profilePanel.classList.add("open");
+    profileScrim.classList.add("open");
+  };
+  const closeProfile = () => { profilePanel.classList.remove("open"); profileScrim.classList.remove("open"); };
+  document.getElementById("profileBtn").addEventListener("click", openProfile);
+  document.getElementById("closeProfilePanel").addEventListener("click", closeProfile);
+  profileScrim.addEventListener("click", closeProfile);
+
+  document.getElementById("editProfileForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("saveProfileBtn");
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    try {
+      const name = document.getElementById("editFullName").value.trim();
+      const username = document.getElementById("editUsername").value.trim();
+      const status = document.getElementById("editStatus").value.trim();
+      await updateUserProfile(me.uid, { name, username, status });
+      if (myProfile) {
+        myProfile.name = name;
+        myProfile.nameLower = name.toLowerCase();
+        myProfile.username = username;
+        myProfile.status = status;
+      }
+      renderMyProfile();
+      showToast("Profile updated successfully!", "success");
+      closeProfile();
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Save changes";
+    }
+  });
+
   const runUserSearch = debounce(async (term) => {
+    console.log("[DEBUG] runUserSearch triggered with term:", term);
     const results = document.getElementById("userSearchResults");
     if (!term) { results.innerHTML = ""; return; }
     try {
-      const users = await searchUsers(term, me.uid);
+      console.log("[DEBUG] Calling searchUsers...");
+      const users = await searchUsers(term, me?.uid);
+      console.log("[DEBUG] searchUsers returned:", users.length, "users");
       if (!users.length) { results.innerHTML = `<p class="text-dim" style="padding:12px;font-size:0.85rem;">No users found.</p>`; return; }
       results.innerHTML = users.map(u => `
         <div class="user-search-result" data-uid="${u.uid}">
@@ -494,19 +566,48 @@
         });
       });
     } catch (err) {
-      console.error("User search error:", err);
-      results.innerHTML = `<p class="text-dim" style="padding:12px;font-size:0.85rem;">Search unavailable. Try again later.</p>`;
+      console.error("[DEBUG] User search error:", err);
+      const errMsg = err.code === "permission-denied"
+        ? "Firebase permission denied. Ensure Firestore security rules allow reading 'users'."
+        : "Search unavailable. Try again later.";
+      results.innerHTML = `<p class="text-dim" style="padding:12px;font-size:0.85rem;color:var(--danger,#ff4d4d);">${escapeHTML(errMsg)}</p>`;
     }
   }, 350);
-  document.getElementById("userSearchInput").addEventListener("input", (e) => runUserSearch(e.target.value));
+  document.getElementById("userSearchInput").addEventListener("input", (e) => { console.log("[DEBUG] Input event fired, value:", e.target.value); runUserSearch(e.target.value); });
 
-  // Sidebar chat search filter
+  // Sidebar chat search filter & fallback prompt
   document.getElementById("chatSearchInput").addEventListener("input", (e) => {
-    const term = e.target.value.toLowerCase();
+    const rawTerm = e.target.value.trim();
+    const term = rawTerm.toLowerCase();
+    let visibleCount = 0;
     document.querySelectorAll(".chat-item").forEach(el => {
-      const name = el.querySelector(".chat-item-name").textContent.toLowerCase();
-      el.style.display = name.includes(term) ? "" : "none";
+      const name = el.querySelector(".chat-item-name")?.textContent.toLowerCase() || "";
+      const matches = name.includes(term);
+      el.style.display = matches ? "" : "none";
+      if (matches) visibleCount++;
     });
+
+    let promptEl = document.getElementById("searchAllUsersPrompt");
+    if (!promptEl) {
+      promptEl = document.createElement("div");
+      promptEl.id = "searchAllUsersPrompt";
+      promptEl.className = "search-all-prompt";
+      promptEl.style.cssText = "padding: 14px; text-align: center; cursor: pointer; color: var(--accent); font-size: 0.85rem; font-weight: 500;";
+      document.getElementById("chatList").after(promptEl);
+    }
+
+    if (rawTerm && visibleCount === 0) {
+      promptEl.innerHTML = `<i class="fa-solid fa-user-plus" style="margin-right:6px;"></i> Search all users for "<strong>${escapeHTML(rawTerm)}</strong>"`;
+      promptEl.style.display = "block";
+      promptEl.onclick = () => {
+        openNewChat();
+        const uInput = document.getElementById("userSearchInput");
+        uInput.value = rawTerm;
+        runUserSearch(rawTerm);
+      };
+    } else {
+      promptEl.style.display = "none";
+    }
   });
 
   // Unread filter tab
@@ -557,7 +658,7 @@
     const results = document.getElementById("friendSearchResults");
     if (!term) { results.innerHTML = ""; return; }
     try {
-      const users = await searchUsers(term, me.uid);
+      const users = await searchUsers(term, me?.uid);
       if (!users.length) { results.innerHTML = `<p class="friend-empty">No users found.</p>`; return; }
       results.innerHTML = users.map(u => {
         const state = friendState(u.uid);

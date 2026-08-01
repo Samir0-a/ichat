@@ -96,26 +96,6 @@
   </div>
 </div>
 
-<!-- Forgot password panel -->
-<div class="overlay-scrim" id="resetScrim"></div>
-<div class="slide-panel" id="resetPanel" role="dialog" aria-label="Reset password">
-  <div class="slide-panel-header">
-    <h3>Reset your password</h3>
-    <button class="btn-icon" id="closeResetPanel" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-  </div>
-  <div class="slide-panel-body">
-    <p class="text-dim" style="margin-bottom:18px;font-size:0.88rem;">Enter the email associated with your account and we'll send a link to reset your password.</p>
-    <div class="field">
-      <label for="resetEmail">Email</label>
-      <div class="input-wrap">
-        <i class="fa-regular fa-envelope leading"></i>
-        <input type="email" id="resetEmail" placeholder="you@example.com" />
-      </div>
-    </div>
-    <button class="btn btn-primary btn-block" id="sendResetBtn">Send reset link</button>
-  </div>
-</div>
-
 <script type="module">
   import { loginUser, loginWithGoogle, sendResetEmail, redirectIfAuthed } from "./js/auth.js";
   import { showToast, initTheme, toggleTheme, friendlyAuthError, isValidEmail } from "./js/utils.js";
@@ -177,26 +157,6 @@
     }
   });
 
-  // Forgot password panel
-  const resetPanel = document.getElementById("resetPanel");
-  const resetScrim = document.getElementById("resetScrim");
-  const openReset = () => { resetPanel.classList.add("open"); resetScrim.classList.add("open"); };
-  const closeReset = () => { resetPanel.classList.remove("open"); resetScrim.classList.remove("open"); };
-
-  document.getElementById("forgotPasswordLink").addEventListener("click", (e) => { e.preventDefault(); openReset(); });
-  document.getElementById("closeResetPanel").addEventListener("click", closeReset);
-  resetScrim.addEventListener("click", closeReset);
-
-  document.getElementById("sendResetBtn").addEventListener("click", async () => {
-    const email = document.getElementById("resetEmail").value;
-    try {
-      await sendResetEmail(email);
-      showToast("Password reset link sent — check your inbox.", "success");
-      closeReset();
-    } catch (err) {
-      showToast(friendlyAuthError(err.code) || err.message, "error");
-    }
-  });
 </script>
 </body>
 </html>

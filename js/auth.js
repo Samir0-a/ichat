@@ -20,22 +20,16 @@ import {
   doc,
   setDoc,
   getDoc,
-  getDocs,
   updateDoc,
-  serverTimestamp,
-  collection,
-  query,
-  where,
-  limit
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { isValidEmail, isValidUsername, sanitizeInput } from "./utils.js";
 import { uploadToCloudinary } from "./cloudinary-config.js";
 
-/** Checks Firestore to see if a username is already taken. */
+/** Checks the public `usernames` lookup collection to see if a username is already taken. */
 export async function isUsernameTaken(username) {
-  const q = query(collection(db, "users"), where("username", "==", username.toLowerCase()), limit(1));
-  const snap = await getDocs(q);
-  return !snap.empty;
+  const snap = await getDoc(doc(db, "usernames", username.toLowerCase()));
+  return snap.exists();
 }
 
 /**
@@ -83,6 +77,8 @@ export async function registerUser({ fullName, username, email, password, confir
     themePreference: "dark"
   });
 
+  await setDoc(doc(db, "usernames", username), { uid: user.uid });
+
   await sendEmailVerification(user);
 
   return user;
@@ -124,6 +120,7 @@ export async function loginWithGoogle() {
       createdAt: serverTimestamp(),
       themePreference: "dark"
     });
+    await setDoc(doc(db, "usernames", username), { uid: user.uid });
   } else {
     await markOnline(user.uid);
   }

@@ -475,23 +475,28 @@
   const runUserSearch = debounce(async (term) => {
     const results = document.getElementById("userSearchResults");
     if (!term) { results.innerHTML = ""; return; }
-    const users = await searchUsers(term, me.uid);
-    if (!users.length) { results.innerHTML = `<p class="text-dim" style="padding:12px;font-size:0.85rem;">No users found.</p>`; return; }
-    results.innerHTML = users.map(u => `
-      <div class="user-search-result" data-uid="${u.uid}">
-        ${avatarRingHTML({ photoURL: u.profileImage, name: u.name, online: u.online, size: 42 })}
-        <div class="user-search-result-info">
-          <div class="name">${escapeHTML(u.name)}</div>
-          <div class="username">@${escapeHTML(u.username)}</div>
-        </div>
-      </div>`).join("");
-    results.querySelectorAll(".user-search-result").forEach(el => {
-      el.addEventListener("click", async () => {
-        const chatId = await startOrGetChat(me.uid, el.dataset.uid);
-        closeNewChat();
-        openChat(chatId, el.dataset.uid);
+    try {
+      const users = await searchUsers(term, me.uid);
+      if (!users.length) { results.innerHTML = `<p class="text-dim" style="padding:12px;font-size:0.85rem;">No users found.</p>`; return; }
+      results.innerHTML = users.map(u => `
+        <div class="user-search-result" data-uid="${u.uid}">
+          ${avatarRingHTML({ photoURL: u.profileImage, name: u.name, online: u.online, size: 42 })}
+          <div class="user-search-result-info">
+            <div class="name">${escapeHTML(u.name)}</div>
+            <div class="username">@${escapeHTML(u.username)}</div>
+          </div>
+        </div>`).join("");
+      results.querySelectorAll(".user-search-result").forEach(el => {
+        el.addEventListener("click", async () => {
+          const chatId = await startOrGetChat(me.uid, el.dataset.uid);
+          closeNewChat();
+          openChat(chatId, el.dataset.uid);
+        });
       });
-    });
+    } catch (err) {
+      console.error("User search error:", err);
+      results.innerHTML = `<p class="text-dim" style="padding:12px;font-size:0.85rem;">Search unavailable. Try again later.</p>`;
+    }
   }, 350);
   document.getElementById("userSearchInput").addEventListener("input", (e) => runUserSearch(e.target.value));
 
@@ -551,40 +556,45 @@
   const runFriendSearch = debounce(async (term) => {
     const results = document.getElementById("friendSearchResults");
     if (!term) { results.innerHTML = ""; return; }
-    const users = await searchUsers(term, me.uid);
-    if (!users.length) { results.innerHTML = `<p class="friend-empty">No users found.</p>`; return; }
-    results.innerHTML = users.map(u => {
-      const state = friendState(u.uid);
-      const actionHTML = state === "friend"
-        ? `<button class="btn btn-secondary btn-sm" disabled>Friends</button>`
-        : state === "pending"
-        ? `<button class="btn btn-secondary btn-sm" disabled>Pending</button>`
-        : state === "blocked"
-        ? `<button class="btn btn-secondary btn-sm" disabled>Blocked</button>`
-        : `<button class="btn btn-primary btn-sm friend-add-btn" data-uid="${u.uid}">Add</button>`;
-      return `
-        <div class="friend-row">
-          ${avatarRingHTML({ photoURL: u.profileImage, name: u.name, online: u.online, size: 44 })}
-          <div class="friend-row-info">
-            <div class="name">${escapeHTML(u.name)}</div>
-            <div class="username">@${escapeHTML(u.username)}</div>
-          </div>
-          <div class="friend-row-actions">${actionHTML}</div>
-        </div>`;
-    }).join("");
-    results.querySelectorAll(".friend-add-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        btn.disabled = true;
-        try {
-          await sendFriendRequest(me.uid, btn.dataset.uid);
-          showToast("Friend request sent", "success", 2000);
-          btn.textContent = "Pending";
-        } catch (err) {
-          showToast(err.message, "error");
-          btn.disabled = false;
-        }
+    try {
+      const users = await searchUsers(term, me.uid);
+      if (!users.length) { results.innerHTML = `<p class="friend-empty">No users found.</p>`; return; }
+      results.innerHTML = users.map(u => {
+        const state = friendState(u.uid);
+        const actionHTML = state === "friend"
+          ? `<button class="btn btn-secondary btn-sm" disabled>Friends</button>`
+          : state === "pending"
+          ? `<button class="btn btn-secondary btn-sm" disabled>Pending</button>`
+          : state === "blocked"
+          ? `<button class="btn btn-secondary btn-sm" disabled>Blocked</button>`
+          : `<button class="btn btn-primary btn-sm friend-add-btn" data-uid="${u.uid}">Add</button>`;
+        return `
+          <div class="friend-row">
+            ${avatarRingHTML({ photoURL: u.profileImage, name: u.name, online: u.online, size: 44 })}
+            <div class="friend-row-info">
+              <div class="name">${escapeHTML(u.name)}</div>
+              <div class="username">@${escapeHTML(u.username)}</div>
+            </div>
+            <div class="friend-row-actions">${actionHTML}</div>
+          </div>`;
+      }).join("");
+      results.querySelectorAll(".friend-add-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          try {
+            await sendFriendRequest(me.uid, btn.dataset.uid);
+            showToast("Friend request sent", "success", 2000);
+            btn.textContent = "Pending";
+          } catch (err) {
+            showToast(err.message, "error");
+            btn.disabled = false;
+          }
+        });
       });
-    });
+    } catch (err) {
+      console.error("Friend search error:", err);
+      results.innerHTML = `<p class="friend-empty">Search unavailable. Try again later.</p>`;
+    }
   }, 350);
   document.getElementById("friendSearchInput").addEventListener("input", (e) => runFriendSearch(e.target.value));
 

@@ -35,19 +35,45 @@ export function listenToUser(uid, callback) {
   });
 }
 
-/** Search users by username prefix (excludes the current user). */
+/** Search users by username or name prefix (excludes the current user). */
 export async function searchUsers(term, currentUid) {
   const cleaned = sanitizeInput(term).toLowerCase();
   if (!cleaned) return [];
-  const q = query(
-    collection(db, "users"),
-    orderBy("username"),
-    where("username", ">=", cleaned),
-    where("username", "<=", cleaned + "\uf8ff"),
-    limit(15)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => d.data()).filter(u => u.uid !== currentUid);
+
+  const results = new Map();
+
+  try {
+    // Strategy 1: Search by username prefix
+    const q1 = query(
+      collection(db, "users"),
+      where("username", ">=" , cleaned),
+      where("username", "<=", cleaned + "\uf8ff"),
+      limit(15)
+    );
+    const snap1 = await getDocs(q1);
+    snap1.docs.forEach(d => {
+      const data = d.data();
+      if (data.uid !== currentUid) results.set(data.uid, data);
+    });
+
+    // Strategy 2: Search by display name prefix
+    const q2 = query(
+      collection(db, "users"),
+      where("name", ">=" , cleaned),
+      where("name", "<=", cleaned + "\uf8ff"),
+      limit(15)
+    );
+    const snap2 = await getDocs(q2);
+    snap2.docs.forEach(d => {
+      const data = d.data();
+      if (data.uid !== currentUid) results.set(data.uid, data);
+    });
+  } catch (err) {
+    console.warn("User search failed (indexes may be missing):", err.message);
+    throw err;
+  }
+
+  return Array.from(results.values()).slice(0, 15);
 }
 
 /** Live-subscribe to the current user's chat list, most recently updated first. */

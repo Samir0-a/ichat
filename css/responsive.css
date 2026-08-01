@@ -1,79 +1,250 @@
 /* =========================================================
    I-Chat — Responsive Rules
+   Figma Design System Breakpoints & Touch Targets
    ========================================================= */
 
-/* ---- Tablet ---- */
-@media (max-width: 1024px) {
-  .app-shell { grid-template-columns: 70px 300px 1fr; }
-  .msg-row { max-width: 75%; }
+/* ---- Tablet (960px) ---- */
+@media (max-width: 960px) {
+  .app-shell {
+    grid-template-columns: 70px 300px 1fr;
+  }
+
+  .msg-row {
+    max-width: 75%;
+  }
 }
 
-/* ---- Small tablet / large phone: collapse sidebar list & chat window ---- */
+/* ---- Mobile-L (768px): Color blocks go full-bleed ---- */
+@media (max-width: 768px) {
+  .auth-brand {
+    border-radius: 0;
+  }
+}
+
+/* ---- Small tablet / large phone (780px): Collapse sidebar & chat ---- */
 @media (max-width: 780px) {
   .app-shell {
     grid-template-columns: 1fr;
   }
-  .app-rail { display: none; }
-  .bottom-nav { display: flex; }
+
+  .app-rail {
+    display: none;
+  }
+
+  .bottom-nav {
+    display: flex;
+  }
 
   .app-sidebar {
-    position: fixed; inset: 0; z-index: 50;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
     padding-bottom: calc(60px + env(safe-area-inset-bottom));
-    transform: translateX(0); transition: transform 0.3s var(--ease);
+    transform: translateX(0);
+    transition: transform 0.3s var(--ease);
   }
-  .app-shell.chat-open .app-sidebar { transform: translateX(-110%); }
+
+  .app-shell.chat-open .app-sidebar {
+    transform: translateX(-110%);
+  }
+
   .chat-window {
-    position: fixed; inset: 0; z-index: 40;
-    transform: translateX(100%); transition: transform 0.3s var(--ease);
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    transform: translateX(100%);
+    transition: transform 0.3s var(--ease);
   }
-  .app-shell.chat-open .chat-window { transform: translateX(0); }
-  .app-shell.chat-open .bottom-nav { display: none; }
-  .chat-back-btn { display: inline-flex !important; }
-  .msg-row { max-width: 85%; }
-  .chat-composer { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+
+  .app-shell.chat-open .chat-window {
+    transform: translateX(0);
+  }
+
+  .app-shell.chat-open .bottom-nav {
+    display: none;
+  }
+
+  .chat-back-btn {
+    display: inline-flex !important;
+  }
+
+  .msg-row {
+    max-width: 85%;
+  }
+
+  .chat-composer {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
 }
 
-.chat-back-btn { display: none; margin-right: 4px; }
+.chat-back-btn {
+  display: none;
+  margin-right: 4px;
+}
 
 /* ---- Messenger-style bottom tab bar (mobile only) ---- */
 .bottom-nav {
   display: none;
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
   height: 60px;
   padding-bottom: env(safe-area-inset-bottom);
-  background: var(--surface-glass);
-  backdrop-filter: blur(20px) saturate(140%);
-  border-top: 1px solid var(--border);
-  align-items: center; justify-content: space-around;
+  background: var(--canvas);
+  border-top: 1px solid var(--hairline);
+  align-items: center;
+  justify-content: space-around;
 }
+
 .bottom-nav-btn {
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  color: var(--text-faint); font-size: 1.15rem; position: relative;
-  padding: 6px 14px; border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--ink);
+  opacity: 0.4;
+  font-size: 20px;
+  position: relative;
+  padding: 6px 14px;
+  border-radius: var(--rounded-md);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s var(--ease);
 }
-.bottom-nav-btn.active { color: var(--accent); }
+
+.bottom-nav-btn:hover {
+  opacity: 0.6;
+}
+
+.bottom-nav-btn.active {
+  color: var(--primary);
+  opacity: 1;
+}
+
 .bottom-nav-btn .rail-badge {
-  position: absolute; top: -2px; right: 6px;
-  min-width: 15px; height: 15px; padding: 0 4px; border-radius: var(--radius-pill);
-  background: var(--warm); color: #241701; font-size: 0.6rem; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
+  position: absolute;
+  top: -2px;
+  right: 6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--rounded-full);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 10px;
+  font-weight: 540;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* ---- Mobile ---- */
-@media (max-width: 520px) {
-  .chat-header { padding: 12px 16px; }
-  .chat-messages { padding: 16px 4%; }
-  .chat-composer { padding-left: 14px; padding-right: 14px; padding-top: 10px; }
-  .sidebar-header { padding: 18px 16px 10px; }
-  .sidebar-search, .sidebar-tabs { padding-left: 16px; padding-right: 16px; }
+/* ---- Mobile (560px) ---- */
+@media (max-width: 560px) {
+  .chat-header {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
 
-  .auth-form-panel { padding: 24px; }
-  .form-row-split { grid-template-columns: 1fr; gap: 0; }
-  .slide-panel { width: 100%; right: -100%; }
+  .chat-messages {
+    padding: var(--spacing-md) 4%;
+  }
+
+  .chat-composer {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+    padding-top: var(--spacing-sm);
+  }
+
+  .sidebar-header {
+    padding: var(--spacing-lg) var(--spacing-md) var(--spacing-sm);
+  }
+
+  .sidebar-search,
+  .sidebar-tabs {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+
+  .auth-form-panel {
+    padding: var(--spacing-lg);
+  }
+
+  .form-row-split {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .slide-panel {
+    width: 100%;
+    right: -100%;
+  }
+
+  /* Display-xl reduces from 86px to ~48px */
+  .display-xl {
+    font-size: 48px;
+    letter-spacing: -0.96px;
+  }
+
+  .display-lg {
+    font-size: 40px;
+    letter-spacing: -0.64px;
+  }
+
+  /* Pill CTAs go full-width */
+  .btn-block {
+    width: 100%;
+  }
 }
 
-/* ---- Very small ---- */
+/* ---- Mobile-XS (559px): Footer collapses ---- */
+@media (max-width: 559px) {
+  .auth-brand-bottom {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+}
+
+/* ---- Very small (360px) ---- */
 @media (max-width: 360px) {
-  .msg-row { max-width: 92%; }
-  .chat-header-info .subtext { display: none; }
+  .msg-row {
+    max-width: 92%;
+  }
+
+  .chat-header-info .subtext {
+    display: none;
+  }
+}
+
+/* ---- Touch Targets (Minimum 44px) ---- */
+@media (pointer: coarse) {
+  /* Pill buttons maintain 44px tap height */
+  .btn {
+    min-height: 44px;
+  }
+
+  /* Circular icon buttons grow to 44px on touch */
+  .btn-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Form input minimum tap target 48px */
+  .field input,
+  .field select {
+    min-height: 48px;
+  }
+
+  /* Bottom nav buttons */
+  .bottom-nav-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Rail buttons */
+  .rail-btn {
+    width: 48px;
+    height: 48px;
+  }
 }

@@ -47,9 +47,10 @@ export async function registerUser({ fullName, username, email, password, confir
   if (!isValidEmail(email)) throw new Error("Please enter a valid email address.");
   if (password.length < 6) throw new Error("Password must be at least 6 characters.");
   if (password !== confirmPassword) throw new Error("Passwords do not match.");
-  if (await isUsernameTaken(username)) throw new Error("That username is already taken.");
 
-  const cred = await createUserWithEmailAndPassword(auth, email, password);
+  await step("check username availability", () => isUsernameTakenOrThrow(username));
+
+  const cred = await step("create auth account", () => createUserWithEmailAndPassword(auth, email, password));
   const user = cred.user;
 
   let photoURL = "";
@@ -62,9 +63,9 @@ export async function registerUser({ fullName, username, email, password, confir
     }
   }
 
-  await updateProfile(user, { displayName: fullName, photoURL: photoURL || null });
+  await step("update auth profile", () => updateProfile(user, { displayName: fullName, photoURL: photoURL || null }));
 
-  await setDoc(doc(db, "users", user.uid), {
+  await step("write users/{uid} profile doc", () => setDoc(doc(db, "users", user.uid), {
     uid: user.uid,
     name: fullName,
     username,
@@ -75,13 +76,28 @@ export async function registerUser({ fullName, username, email, password, confir
     lastSeen: serverTimestamp(),
     createdAt: serverTimestamp(),
     themePreference: "dark"
-  });
+  }));
 
-  await setDoc(doc(db, "usernames", username), { uid: user.uid });
+  await step("reserve usernames/{username} doc", () => setDoc(doc(db, "usernames", username), { uid: user.uid }));
 
-  await sendEmailVerification(user);
+  await step("send verification email", () => sendEmailVerification(user));
 
   return user;
+}
+
+/** Runs a labeled async step; on failure, tags the error with the step name and re-throws. */
+async function step(label, fn) {
+  try {
+    return await fn();
+  } catch (err) {
+    console.error(`Registration failed at step: "${label}" —`, err.code || err.message, err);
+    err.stepLabel = label;
+    throw err;
+  }
+}
+
+async function isUsernameTakenOrThrow(username) {
+  if (await isUsernameTaken(username)) throw new Error("That username is already taken.");
 }
 
 /** Logs in with email + password. `remember` controls session persistence. */

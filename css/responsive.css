@@ -9,6 +9,10 @@
     grid-template-columns: 70px 300px 1fr;
   }
 
+  .app-shell.sidebar-collapsed {
+    grid-template-columns: 70px 0 1fr;
+  }
+
   .msg-row {
     max-width: 75%;
   }
@@ -25,6 +29,20 @@
 @media (max-width: 780px) {
   .app-shell {
     grid-template-columns: 1fr;
+  }
+
+  .app-shell.sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell.sidebar-collapsed .app-sidebar {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Sidebar toggle is a desktop/tablet control; mobile uses the bottom nav */
+  .sidebar-toggle-btn {
+    display: none;
   }
 
   .app-rail {

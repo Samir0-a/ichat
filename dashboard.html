@@ -16,6 +16,9 @@
   <!-- Icon rail -->
   <aside class="app-rail">
     <div class="logo-mark"><i class="fa-solid fa-bolt"></i></div>
+    <button class="sidebar-toggle-btn" id="sidebarToggle" aria-label="Hide sidebar" aria-pressed="false" title="Hide sidebar">
+      <i class="fa-solid fa-angles-left"></i>
+    </button>
     <nav class="rail-nav">
       <button class="rail-btn active rail-btn-messages" aria-label="Messages"><i class="fa-solid fa-message"></i></button>
       <button class="rail-btn" id="notificationsBtn" aria-label="Notifications">
@@ -76,6 +79,9 @@
 
     <div id="activeChat" class="hidden" style="display:flex;flex-direction:column;height:100%;">
       <div class="chat-header">
+        <button class="sidebar-toggle-btn" id="sidebarToggleChat" aria-label="Hide sidebar" aria-pressed="false" title="Hide sidebar">
+          <i class="fa-solid fa-angles-left"></i>
+        </button>
         <button class="btn-icon chat-back-btn" id="chatBackBtn" aria-label="Back to chat list"><i class="fa-solid fa-arrow-left"></i></button>
         <span class="avatar-ring offline" id="headerAvatar"><div class="avatar-fallback">--</div></span>
         <div class="chat-header-info">
@@ -237,6 +243,28 @@
   document.getElementById("themeToggle").addEventListener("click", () => {
     const t = toggleTheme();
     document.querySelector("#themeToggle i").className = t === "dark" ? "fa-solid fa-moon" : "fa-solid fa-sun";
+  });
+
+  // Sidebar hide/show toggle
+  const appShell = document.getElementById("appShell");
+  const sidebarToggles = document.querySelectorAll(".sidebar-toggle-btn");
+
+  function setSidebarCollapsed(collapsed) {
+    appShell.classList.toggle("sidebar-collapsed", collapsed);
+    localStorage.setItem("ichat.sidebarCollapsed", collapsed ? "1" : "0");
+    sidebarToggles.forEach(btn => {
+      btn.classList.toggle("active", collapsed);
+      btn.setAttribute("aria-pressed", String(collapsed));
+      btn.setAttribute("aria-label", collapsed ? "Show sidebar" : "Hide sidebar");
+      btn.title = collapsed ? "Show sidebar" : "Hide sidebar";
+      btn.querySelector("i").className = collapsed ? "fa-solid fa-angles-right" : "fa-solid fa-angles-left";
+    });
+  }
+
+  if (localStorage.getItem("ichat.sidebarCollapsed") === "1") setSidebarCollapsed(true);
+
+  sidebarToggles.forEach(btn => {
+    btn.addEventListener("click", () => setSidebarCollapsed(!appShell.classList.contains("sidebar-collapsed")));
   });
 
   let me = null;

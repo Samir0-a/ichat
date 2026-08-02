@@ -10,6 +10,46 @@
   height: 100dvh;
   overflow: hidden;
   background: var(--canvas);
+  transition: grid-template-columns 0.32s var(--ease);
+}
+
+/* ---------- Sidebar Hide/Show ---------- */
+.app-shell.sidebar-collapsed {
+  grid-template-columns: 76px 0 1fr;
+}
+
+.app-shell.sidebar-collapsed .app-sidebar {
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-toggle-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--rounded-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--ink);
+  opacity: 0.5;
+  transition: background 0.2s var(--ease), opacity 0.2s var(--ease), transform 0.15s var(--ease);
+}
+
+.sidebar-toggle-btn:hover {
+  background: var(--surface-soft);
+  opacity: 0.8;
+}
+
+.sidebar-toggle-btn:active {
+  transform: scale(0.92);
+}
+
+.sidebar-toggle-btn.active {
+  background: var(--primary);
+  color: var(--on-primary);
+  opacity: 1;
 }
 
 /* ---------- Rail (Far Left) ---------- */
@@ -99,6 +139,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  transition: opacity 0.3s var(--ease);
 }
 
 .sidebar-header {

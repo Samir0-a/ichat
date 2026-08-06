@@ -132,6 +132,38 @@ body {
   font-feature-settings: 'kern' 1, 'liga' 1;
 }
 
+.auth-brand-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.logo-mark{
+    width:48px;
+    height:48px;
+    background:#ffffff;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:6px;
+}
+
+.logo-mark img{
+    width:40px;
+    height:40px;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,.8));
+}
+
 /* ---- Typography Hierarchy ---- */
 h1, h2, h3, h4 {
   font-family: var(--font-sans);

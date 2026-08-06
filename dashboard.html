@@ -8,6 +8,38 @@
 <link rel="stylesheet" href="css/chat.css" />
 <link rel="stylesheet" href="css/responsive.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+<style>
+  /* --- Settings & Notifications panels (scoped additions) --- */
+  .settings-profile-card{display:flex;align-items:center;gap:12px;padding:10px 4px 22px;border-bottom:1px solid var(--border,#333);margin-bottom:18px;}
+  .settings-profile-card .name{font-weight:600;font-size:0.98rem;}
+  .settings-profile-card .username{font-size:0.82rem;color:var(--text-dim,#999);}
+  .settings-profile-card > div:nth-child(2){flex:1;min-width:0;}
+  .settings-section{margin-bottom:22px;}
+  .settings-section h4{font-size:0.75rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-dim,#999);margin:0 0 10px 2px;}
+  .settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 2px;}
+  .settings-row-title{font-size:0.9rem;font-weight:500;}
+  .settings-row-desc{font-size:0.78rem;color:var(--text-dim,#999);margin-top:2px;}
+  .settings-link-btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 10px;border-radius:10px;border:1px solid var(--border,#333);background:var(--bg-card,#1e1e1e);color:inherit;font-size:0.88rem;cursor:pointer;margin-bottom:8px;text-align:left;}
+  .settings-link-btn:hover{border-color:var(--accent,#6c5ce7);}
+  .settings-link-btn span{display:flex;align-items:center;gap:10px;}
+  .switch{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch-slider{position:absolute;cursor:pointer;inset:0;background:var(--border,#3a3a3a);border-radius:999px;transition:0.2s;}
+  .switch-slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:0.2s;}
+  .switch input:checked + .switch-slider{background:var(--accent,#6c5ce7);}
+  .switch input:checked + .switch-slider::before{transform:translateX(18px);}
+
+  .notif-item{display:flex;align-items:flex-start;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border,#2a2a2a);}
+  .notif-item-body{flex:1;min-width:0;}
+  .notif-item-title{font-size:0.88rem;line-height:1.35;}
+  .notif-item-title strong{font-weight:600;}
+  .notif-item-time{font-size:0.75rem;color:var(--text-dim,#999);margin-top:3px;}
+  .notif-item-actions{display:flex;gap:8px;margin-top:8px;}
+  .notif-item.clickable{cursor:pointer;border-radius:10px;}
+  .notif-item.clickable:hover{background:var(--bg-hover,rgba(255,255,255,0.04));}
+  .notif-empty{padding:40px 12px;text-align:center;color:var(--text-dim,#999);font-size:0.88rem;}
+  .notif-empty i{display:block;font-size:1.8rem;margin-bottom:10px;opacity:0.6;}
+</style>
 </head>
 <body>
 
@@ -169,6 +201,95 @@
   </div>
 </div>
 
+<!-- Notifications panel -->
+<div class="overlay-scrim" id="notifScrim"></div>
+<div class="slide-panel" id="notifPanel" role="dialog" aria-label="Notifications">
+  <div class="slide-panel-header">
+    <h3>Notifications</h3>
+    <button class="btn-icon" id="closeNotifPanel" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="slide-panel-body">
+    <div id="notifContent"></div>
+  </div>
+</div>
+
+<!-- Settings panel -->
+<div class="overlay-scrim" id="settingsScrim"></div>
+<div class="slide-panel" id="settingsPanel" role="dialog" aria-label="Settings">
+  <div class="slide-panel-header">
+    <h3>Settings</h3>
+    <button class="btn-icon" id="closeSettingsPanel" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="slide-panel-body">
+    <div class="settings-profile-card">
+      <span class="avatar-ring offline" id="settingsAvatar"><div class="avatar-fallback">--</div></span>
+      <div>
+        <div class="name" id="settingsName">Loading…</div>
+        <div class="username" id="settingsUsername">@—</div>
+      </div>
+      <button class="btn-icon" id="settingsEditProfileBtn" aria-label="Edit profile"><i class="fa-regular fa-pen-to-square"></i></button>
+    </div>
+
+    <div class="settings-section">
+      <h4>Appearance</h4>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-title">Dark mode</div>
+          <div class="settings-row-desc">Switch between light and dark theme</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="settingsThemeToggle" />
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h4>Notifications</h4>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-title">Message sounds</div>
+          <div class="settings-row-desc">Play a sound when a new message arrives</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="settingsSoundToggle" />
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-title">Desktop notifications</div>
+          <div class="settings-row-desc">Show a system notification for new messages</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="settingsDesktopToggle" />
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h4>Privacy</h4>
+      <button class="settings-link-btn" id="settingsBlockedBtn" type="button">
+        <span><i class="fa-solid fa-user-slash"></i> Blocked users</span>
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <div class="settings-section">
+      <h4>Account</h4>
+      <button class="settings-link-btn" id="settingsChangePasswordBtn" type="button">
+        <span><i class="fa-solid fa-key"></i> Send password reset email</span>
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <button class="btn btn-secondary btn-block" id="settingsLogoutBtn" style="margin-top:6px;">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i> Log out
+    </button>
+  </div>
+</div>
+
 <!-- Mobile menu panel (theme + logout — desktop rail is hidden on phones) -->
 <div class="overlay-scrim" id="menuScrim"></div>
 <div class="slide-panel" id="menuPanel" role="dialog" aria-label="Menu">
@@ -221,7 +342,7 @@
 
 <script type="module">
   console.log("[I-Chat] Script module loaded");
-  import { requireAuth, logoutUser, updateUserProfile } from "./js/auth.js";
+  import { requireAuth, logoutUser, updateUserProfile, sendResetEmail } from "./js/auth.js";
   import {
     getUserProfile, listenToUser, searchUsers, listenToChatList,
     startOrGetChat, getOtherParticipant, listenToMessages, sendMessage,
@@ -238,12 +359,56 @@
   } from "./js/utils.js";
 
   initTheme();
-  document.querySelector("#themeToggle i").className =
-    document.documentElement.getAttribute("data-theme") === "dark" ? "fa-solid fa-moon" : "fa-solid fa-sun";
-  document.getElementById("themeToggle").addEventListener("click", () => {
-    const t = toggleTheme();
+
+  function syncThemeUI(t) {
     document.querySelector("#themeToggle i").className = t === "dark" ? "fa-solid fa-moon" : "fa-solid fa-sun";
-  });
+    const settingsToggle = document.getElementById("settingsThemeToggle");
+    if (settingsToggle) settingsToggle.checked = t === "dark";
+  }
+  syncThemeUI(document.documentElement.getAttribute("data-theme"));
+
+  document.getElementById("themeToggle").addEventListener("click", () => syncThemeUI(toggleTheme()));
+
+  // ---------- Notification preferences (sound / desktop) ----------
+  const NOTIF_PREFS_KEY = "ichat-notif-prefs";
+  function loadNotifPrefs() {
+    try {
+      return { sound: true, desktop: false, ...JSON.parse(localStorage.getItem(NOTIF_PREFS_KEY) || "{}") };
+    } catch {
+      return { sound: true, desktop: false };
+    }
+  }
+  function saveNotifPrefs(prefs) {
+    localStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(prefs));
+  }
+  let notifPrefs = loadNotifPrefs();
+
+  /** Short two-tone chime using the Web Audio API — no external asset needed. */
+  function playNotifSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [660, 880].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.11);
+        gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + i * 0.11 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.11 + 0.28);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(ctx.currentTime + i * 0.11);
+        osc.stop(ctx.currentTime + i * 0.11 + 0.3);
+      });
+    } catch { /* audio unsupported — safe to ignore */ }
+  }
+
+  function showDesktopNotification(title, body, avatarURL) {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    try {
+      const n = new Notification(title, { body, icon: avatarURL || undefined });
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch { /* ignore unsupported environments */ }
+  }
 
   // Sidebar hide/show toggle
   const appShell = document.getElementById("appShell");
@@ -282,6 +447,10 @@
   let outgoingRequests = [];
   let blockedUsers = [];
   let activeFriendsTab = "requests";
+  let prevUnreadByChat = {};
+  let chatListLoadedOnce = false;
+  let prevIncomingIds = new Set();
+  let requestsLoadedOnce = false;
 
   async function cachedUser(uid) {
     if (userCache[uid]) return userCache[uid];
@@ -298,8 +467,16 @@
     listenToFriends(user.uid, (list) => { friends = list; if (activeFriendsTab === "friends") renderFriendsTab(); });
     listenToOutgoingRequests(user.uid, (list) => { outgoingRequests = list; });
     listenToIncomingRequests(user.uid, (list) => {
+      const newIds = list.map(r => r.id);
+      if (requestsLoadedOnce) {
+        const brandNew = newIds.filter(id => !prevIncomingIds.has(id));
+        if (brandNew.length && notifPrefs.sound) playNotifSound();
+      }
+      requestsLoadedOnce = true;
+      prevIncomingIds = new Set(newIds);
       incomingRequests = list;
       updateFriendsBadge();
+      updateNotifBadge();
       if (activeFriendsTab === "requests") renderFriendsTab();
     });
     listenToBlocked(user.uid, (list) => { blockedUsers = list; if (activeFriendsTab === "blocked") renderFriendsTab(); });
@@ -325,9 +502,32 @@
     }).replace('class="avatar-ring', 'id="menuAvatar" class="avatar-ring');
     document.getElementById("menuName").textContent = myProfile?.name || "You";
     document.getElementById("menuStatus").textContent = myProfile?.status || "Online";
+
+    document.getElementById("settingsAvatar").outerHTML = avatarRingHTML({
+      photoURL: myProfile?.profileImage, name: myProfile?.name || me.email, online: true, size: 48
+    }).replace('class="avatar-ring', 'id="settingsAvatar" class="avatar-ring');
+    document.getElementById("settingsName").textContent = myProfile?.name || "You";
+    document.getElementById("settingsUsername").textContent = myProfile?.username ? `@${myProfile.username}` : me.email || "";
   }
 
   async function renderChatList(list) {
+    if (chatListLoadedOnce) {
+      for (const chat of list) {
+        const otherUid = getOtherParticipant(chat, me.uid);
+        const unread = (chat.unread && chat.unread[me.uid]) || 0;
+        const prevUnread = prevUnreadByChat[chat.id] || 0;
+        if (unread > prevUnread && chat.lastMessageSender && chat.lastMessageSender !== me.uid) {
+          const other = await cachedUser(otherUid);
+          if (notifPrefs.sound) playNotifSound();
+          if (notifPrefs.desktop && document.hidden) {
+            showDesktopNotification(other?.name || "New message", chat.lastMessage || "Sent you a message", other?.profileImage);
+          }
+        }
+      }
+    }
+    chatListLoadedOnce = true;
+    prevUnreadByChat = Object.fromEntries(list.map(c => [c.id, (c.unread && c.unread[me.uid]) || 0]));
+
     chats = list;
     const container = document.getElementById("chatList");
     if (!list.length) {
@@ -363,13 +563,14 @@
   }
 
   function updateNotifBadge() {
-    const total = chats.reduce((sum, c) => sum + ((c.unread && c.unread[me.uid]) || 0), 0);
+    const total = chats.reduce((sum, c) => sum + ((c.unread && c.unread[me.uid]) || 0), 0) + incomingRequests.length;
     const badge = document.getElementById("notifBadge");
     badge.textContent = total;
     badge.classList.toggle("hidden", total === 0);
     const mobileBadge = document.getElementById("navNotifBadge");
     mobileBadge.textContent = total;
     mobileBadge.classList.toggle("hidden", total === 0);
+    if (document.getElementById("notifPanel").classList.contains("open")) renderNotifPanel();
   }
 
   async function openChat(chatId, otherUid) {
@@ -838,24 +1039,178 @@
     }
   }
 
-  // Settings — placeholder until a full settings page exists
-  document.getElementById("settingsBtn").addEventListener("click", () => {
-    showToast("Settings page is coming soon.", "info", 2200);
+  // ---------- Settings panel ----------
+  const settingsPanel = document.getElementById("settingsPanel");
+  const settingsScrim = document.getElementById("settingsScrim");
+  const openSettings = () => {
+    document.getElementById("settingsSoundToggle").checked = notifPrefs.sound;
+    document.getElementById("settingsDesktopToggle").checked = notifPrefs.desktop && Notification?.permission === "granted";
+    syncThemeUI(document.documentElement.getAttribute("data-theme"));
+    settingsPanel.classList.add("open");
+    settingsScrim.classList.add("open");
+  };
+  const closeSettings = () => { settingsPanel.classList.remove("open"); settingsScrim.classList.remove("open"); };
+  document.getElementById("settingsBtn").addEventListener("click", openSettings);
+  document.getElementById("closeSettingsPanel").addEventListener("click", closeSettings);
+  settingsScrim.addEventListener("click", closeSettings);
+
+  document.getElementById("settingsThemeToggle").addEventListener("change", () => syncThemeUI(toggleTheme()));
+
+  document.getElementById("settingsSoundToggle").addEventListener("change", (e) => {
+    notifPrefs.sound = e.target.checked;
+    saveNotifPrefs(notifPrefs);
+    if (notifPrefs.sound) playNotifSound();
   });
 
-  // Logout
+  document.getElementById("settingsDesktopToggle").addEventListener("change", async (e) => {
+    const wantsOn = e.target.checked;
+    if (!("Notification" in window)) {
+      showToast("Desktop notifications aren't supported in this browser.", "error");
+      e.target.checked = false;
+      return;
+    }
+    if (wantsOn) {
+      const perm = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+      if (perm !== "granted") {
+        showToast("Notification permission was not granted.", "warning");
+        e.target.checked = false;
+        notifPrefs.desktop = false;
+      } else {
+        notifPrefs.desktop = true;
+        showToast("Desktop notifications enabled", "success", 1800);
+      }
+    } else {
+      notifPrefs.desktop = false;
+    }
+    saveNotifPrefs(notifPrefs);
+  });
+
+  document.getElementById("settingsEditProfileBtn").addEventListener("click", () => {
+    closeSettings();
+    openProfile();
+  });
+
+  document.getElementById("settingsBlockedBtn").addEventListener("click", () => {
+    closeSettings();
+    activeFriendsTab = "blocked";
+    document.querySelectorAll(".friends-tabs .sidebar-tab").forEach(t => t.classList.toggle("active", t.dataset.friendTab === "blocked"));
+    openFriends();
+  });
+
+  document.getElementById("settingsChangePasswordBtn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    if (!me?.email) return;
+    btn.disabled = true;
+    try {
+      await sendResetEmail(me.email);
+      showToast(`Password reset email sent to ${me.email}`, "success", 3000);
+    } catch (err) {
+      showToast(err.message || "Couldn't send reset email.", "error");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById("settingsLogoutBtn").addEventListener("click", async () => {
+    await logoutUser();
+    window.location.href = "index.html";
+  });
+
+  // Logout (rail)
   document.getElementById("logoutBtn").addEventListener("click", async () => {
     await logoutUser();
     window.location.href = "index.html";
   });
 
-  // Notification bell — placeholder until a full notifications panel exists
-  document.getElementById("notificationsBtn").addEventListener("click", () => {
-    showToast("Notifications panel is coming soon.", "info", 2200);
-  });
-  document.getElementById("navNotifBtn").addEventListener("click", () => {
-    showToast("Notifications panel is coming soon.", "info", 2200);
-  });
+  // ---------- Notifications panel ----------
+  const notifPanel = document.getElementById("notifPanel");
+  const notifScrim = document.getElementById("notifScrim");
+  const openNotifPanel = () => {
+    notifPanel.classList.add("open");
+    notifScrim.classList.add("open");
+    renderNotifPanel();
+  };
+  const closeNotifPanel = () => { notifPanel.classList.remove("open"); notifScrim.classList.remove("open"); };
+  document.getElementById("notificationsBtn").addEventListener("click", openNotifPanel);
+  document.getElementById("navNotifBtn").addEventListener("click", openNotifPanel);
+  document.getElementById("closeNotifPanel").addEventListener("click", closeNotifPanel);
+  notifScrim.addEventListener("click", closeNotifPanel);
+
+  /** Builds a merged, time-sorted feed of pending friend requests + chats with unread messages. */
+  async function renderNotifPanel() {
+    const container = document.getElementById("notifContent");
+    const unreadChats = chats.filter(c => ((c.unread && c.unread[me.uid]) || 0) > 0);
+
+    if (!incomingRequests.length && !unreadChats.length) {
+      container.innerHTML = `<div class="notif-empty"><i class="fa-regular fa-bell-slash"></i>You're all caught up — no new notifications.</div>`;
+      return;
+    }
+
+    const requestItems = await Promise.all(incomingRequests.map(async (req) => {
+      const user = await cachedUser(req.sender);
+      const sortKey = req.createdAt?.toMillis ? req.createdAt.toMillis() : 0;
+      return { kind: "request", sortKey, req, user };
+    }));
+
+    const chatItems = await Promise.all(unreadChats.map(async (chat) => {
+      const otherUid = getOtherParticipant(chat, me.uid);
+      const user = await cachedUser(otherUid);
+      const sortKey = chat.updatedAt?.toMillis ? chat.updatedAt.toMillis() : 0;
+      return { kind: "message", sortKey, chat, otherUid, user };
+    }));
+
+    const feed = [...requestItems, ...chatItems].sort((a, b) => b.sortKey - a.sortKey);
+
+    container.innerHTML = feed.map((item) => {
+      if (item.kind === "request") {
+        return `
+          <div class="notif-item" data-request-id="${item.req.id}" data-sender="${item.req.sender}">
+            ${avatarRingHTML({ photoURL: item.user?.profileImage, name: item.user?.name, online: item.user?.online, size: 44 })}
+            <div class="notif-item-body">
+              <div class="notif-item-title"><strong>${escapeHTML(item.user?.name || "Someone")}</strong> sent you a friend request</div>
+              <div class="notif-item-time">${item.req.createdAt ? formatTime(item.req.createdAt) : ""}</div>
+              <div class="notif-item-actions">
+                <button class="btn btn-primary btn-sm notif-req-accept">Accept</button>
+                <button class="btn btn-secondary btn-sm notif-req-decline">Decline</button>
+              </div>
+            </div>
+          </div>`;
+      }
+      const unread = (item.chat.unread && item.chat.unread[me.uid]) || 0;
+      return `
+        <div class="notif-item clickable" data-chat-id="${item.chat.id}" data-other-uid="${item.otherUid}">
+          ${avatarRingHTML({ photoURL: item.user?.profileImage, name: item.user?.name, online: item.user?.online, size: 44 })}
+          <div class="notif-item-body">
+            <div class="notif-item-title"><strong>${escapeHTML(item.user?.name || "Unknown user")}</strong> — ${escapeHTML(item.chat.lastMessage || "New message")}</div>
+            <div class="notif-item-time">${item.chat.updatedAt ? formatTime(item.chat.updatedAt) : ""} · ${unread} unread</div>
+          </div>
+        </div>`;
+    }).join("");
+
+    container.querySelectorAll(".notif-req-accept").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const row = btn.closest(".notif-item");
+        await acceptFriendRequest(row.dataset.requestId, row.dataset.sender, me.uid);
+        showToast("Friend request accepted", "success", 2000);
+        renderNotifPanel();
+      });
+    });
+    container.querySelectorAll(".notif-req-decline").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const row = btn.closest(".notif-item");
+        await declineFriendRequest(row.dataset.requestId);
+        renderNotifPanel();
+      });
+    });
+    container.querySelectorAll(".notif-item.clickable").forEach(row => {
+      row.addEventListener("click", () => {
+        closeNotifPanel();
+        openChat(row.dataset.chatId, row.dataset.otherUid);
+      });
+    });
+  }
 
   // Bottom nav: Chats tab — closes an open conversation to reveal the chat list
   document.getElementById("navChatsBtn").addEventListener("click", () => {

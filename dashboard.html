@@ -9,36 +9,83 @@
 <link rel="stylesheet" href="css/responsive.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 <style>
-  /* --- Settings & Notifications panels (scoped additions) --- */
-  .settings-profile-card{display:flex;align-items:center;gap:12px;padding:10px 4px 22px;border-bottom:1px solid var(--border,#333);margin-bottom:18px;}
-  .settings-profile-card .name{font-weight:600;font-size:0.98rem;}
-  .settings-profile-card .username{font-size:0.82rem;color:var(--text-dim,#999);}
+  /* --- Settings & Notifications panels (scoped additions, using the site's design tokens) --- */
+  .settings-profile-card{display:flex;align-items:center;gap:var(--spacing-sm);padding:10px 4px 22px;border-bottom:1px solid var(--hairline);margin-bottom:var(--spacing-lg);}
+  .settings-profile-card .avatar-ring{width:48px;height:48px;font-size:16px;}
+  .settings-profile-card .name{font-weight:540;font-size:16px;letter-spacing:-0.16px;}
+  .settings-profile-card .username{font-size:13px;font-weight:330;color:var(--ink);opacity:0.45;}
   .settings-profile-card > div:nth-child(2){flex:1;min-width:0;}
-  .settings-section{margin-bottom:22px;}
-  .settings-section h4{font-size:0.75rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-dim,#999);margin:0 0 10px 2px;}
-  .settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 2px;}
-  .settings-row-title{font-size:0.9rem;font-weight:500;}
-  .settings-row-desc{font-size:0.78rem;color:var(--text-dim,#999);margin-top:2px;}
-  .settings-link-btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 10px;border-radius:10px;border:1px solid var(--border,#333);background:var(--bg-card,#1e1e1e);color:inherit;font-size:0.88rem;cursor:pointer;margin-bottom:8px;text-align:left;}
-  .settings-link-btn:hover{border-color:var(--accent,#6c5ce7);}
+  .settings-section{margin-bottom:var(--spacing-lg);}
+  .settings-section h4{font-family:var(--font-mono);font-size:12px;font-weight:400;letter-spacing:0.60px;text-transform:uppercase;color:var(--ink);opacity:0.4;margin:0 0 var(--spacing-sm) 2px;}
+  .settings-row{display:flex;align-items:center;justify-content:space-between;gap:var(--spacing-sm);padding:10px 2px;}
+  .settings-row-title{font-size:15px;font-weight:480;letter-spacing:-0.15px;}
+  .settings-row-desc{font-size:13px;font-weight:330;color:var(--ink);opacity:0.45;margin-top:2px;}
+  .settings-link-btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 14px;border-radius:var(--rounded-md);border:1px solid var(--hairline);background:var(--canvas);color:inherit;font-size:14px;font-weight:330;cursor:pointer;margin-bottom:var(--spacing-xs);text-align:left;transition:background 0.2s var(--ease);}
+  .settings-link-btn:hover{background:var(--surface-soft);}
   .settings-link-btn span{display:flex;align-items:center;gap:10px;}
+  .settings-link-btn i:first-child{opacity:0.5;width:16px;text-align:center;}
+
   .switch{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0;}
   .switch input{opacity:0;width:0;height:0;}
-  .switch-slider{position:absolute;cursor:pointer;inset:0;background:var(--border,#3a3a3a);border-radius:999px;transition:0.2s;}
-  .switch-slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:0.2s;}
-  .switch input:checked + .switch-slider{background:var(--accent,#6c5ce7);}
-  .switch input:checked + .switch-slider::before{transform:translateX(18px);}
+  .switch-slider{position:absolute;cursor:pointer;inset:0;background:var(--hairline);border-radius:var(--rounded-full);transition:background 0.2s var(--ease);}
+  .switch-slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;top:3px;background:var(--canvas);border-radius:50%;transition:transform 0.2s var(--ease);box-shadow:var(--shadow-soft);}
+  .switch input:checked + .switch-slider{background:var(--primary);}
+  .switch input:checked + .switch-slider::before{transform:translateX(18px);background:var(--on-primary);}
 
-  .notif-item{display:flex;align-items:flex-start;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border,#2a2a2a);}
+  .notif-item{display:flex;align-items:flex-start;gap:var(--spacing-sm);padding:12px 4px;border-bottom:1px solid var(--hairline);}
+  .notif-item .avatar-ring{width:44px;height:44px;font-size:14px;flex-shrink:0;}
   .notif-item-body{flex:1;min-width:0;}
-  .notif-item-title{font-size:0.88rem;line-height:1.35;}
-  .notif-item-title strong{font-weight:600;}
-  .notif-item-time{font-size:0.75rem;color:var(--text-dim,#999);margin-top:3px;}
+  .notif-item-title{font-size:14px;font-weight:330;line-height:1.4;letter-spacing:-0.14px;}
+  .notif-item-title strong{font-weight:540;}
+  .notif-item-time{font-size:12px;font-weight:330;color:var(--ink);opacity:0.4;margin-top:3px;}
   .notif-item-actions{display:flex;gap:8px;margin-top:8px;}
-  .notif-item.clickable{cursor:pointer;border-radius:10px;}
-  .notif-item.clickable:hover{background:var(--bg-hover,rgba(255,255,255,0.04));}
-  .notif-empty{padding:40px 12px;text-align:center;color:var(--text-dim,#999);font-size:0.88rem;}
-  .notif-empty i{display:block;font-size:1.8rem;margin-bottom:10px;opacity:0.6;}
+  .notif-item.clickable{cursor:pointer;border-radius:var(--rounded-md);transition:background 0.15s var(--ease);}
+  .notif-item.clickable:hover{background:var(--surface-soft);}
+  .notif-empty{padding:var(--spacing-xxl) var(--spacing-md);text-align:center;color:var(--ink);opacity:0.4;font-size:14px;font-weight:330;}
+  .notif-empty i{display:block;font-size:28px;margin-bottom:var(--spacing-sm);opacity:0.6;}
+
+  /* ---- Responsive: matches breakpoints in css/responsive.css ---- */
+  @media (max-width: 780px) {
+    /* Settings/Notifications panels go full-screen like the other slide-panels on
+       phones/small tablets, with room for the home-indicator / gesture bar. */
+    #settingsPanel .slide-panel-body,
+    #notifPanel .slide-panel-body {
+      padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom));
+    }
+  }
+
+  @media (max-width: 560px) {
+    .settings-profile-card { gap: 10px; padding: 6px 2px 18px; margin-bottom: 14px; }
+    .settings-profile-card .name { font-size: 15px; }
+    .settings-section { margin-bottom: 18px; }
+    .settings-section h4 { font-size: 11px; }
+    .settings-row { padding: 11px 0; }
+    .settings-row-title { font-size: 14px; }
+    .settings-row-desc { font-size: 12px; }
+    .settings-link-btn { padding: 12px 10px; font-size: 13px; }
+
+    .notif-item { padding: 11px 0; gap: 10px; }
+    .notif-item-title { font-size: 13px; }
+    .notif-item-actions { flex-wrap: wrap; }
+    .notif-item-actions .btn { flex: 1 1 100px; }
+  }
+
+  @media (max-width: 360px) {
+    .settings-profile-card .username { font-size: 12px; }
+    .settings-row-desc { display: none; } /* keep rows to a single tappable line on the smallest phones */
+    .notif-item-title { font-size: 12.5px; }
+  }
+
+  /* ---- Touch targets: bring the new controls up to the same 44px+ minimum
+     already applied to .btn / .btn-icon elsewhere in css/responsive.css ---- */
+  @media (pointer: coarse) {
+    .switch { width: 48px; height: 28px; }
+    .switch-slider::before { width: 22px; height: 22px; }
+    .switch input:checked + .switch-slider::before { transform: translateX(20px); }
+    .settings-row { min-height: 48px; }
+    .settings-link-btn { min-height: 48px; }
+    .notif-item.clickable { min-height: 48px; }
+  }
 </style>
 </head>
 <body>
@@ -47,7 +94,7 @@
 
   <!-- Icon rail -->
   <aside class="app-rail">
-    <div class="logo-mark"><img src="logo.png"></div>
+    <div class="logo-mark"><i class="fa-solid fa-bolt"></i></div>
     <button class="sidebar-toggle-btn" id="sidebarToggle" aria-label="Hide sidebar" aria-pressed="false" title="Hide sidebar">
       <i class="fa-solid fa-angles-left"></i>
     </button>
@@ -155,7 +202,7 @@
       <i class="fa-solid fa-user-group"></i>
       <span class="rail-badge hidden" id="navFriendsBadge">0</span>
     </button>
-    <button class="bottom-nav-btn" id="navMenuBtn" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+    <button class="bottom-nav-btn" id="navMenuBtn" aria-label="Settings"><i class="fa-solid fa-gear"></i></button>
   </nav>
 </div>
 
@@ -290,30 +337,6 @@
   </div>
 </div>
 
-<!-- Mobile menu panel (theme + logout — desktop rail is hidden on phones) -->
-<div class="overlay-scrim" id="menuScrim"></div>
-<div class="slide-panel" id="menuPanel" role="dialog" aria-label="Menu">
-  <div class="slide-panel-header">
-    <h3>Menu</h3>
-    <button class="btn-icon" id="closeMenuPanel" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-  </div>
-  <div class="slide-panel-body">
-    <div class="sidebar-footer" style="border:none;padding:6px 4px 20px;">
-      <span class="avatar-ring offline" id="menuAvatar"><div class="avatar-fallback">--</div></span>
-      <div class="sidebar-footer-info">
-        <div class="name" id="menuName">Loading…</div>
-        <div class="status" id="menuStatus">Setting up…</div>
-      </div>
-    </div>
-    <button class="btn btn-secondary btn-block" id="menuThemeToggle" style="margin-bottom:10px;">
-      <i class="fa-solid fa-moon"></i> Toggle dark / light mode
-    </button>
-    <button class="btn btn-secondary btn-block" id="menuLogoutBtn">
-      <i class="fa-solid fa-arrow-right-from-bracket"></i> Log out
-    </button>
-  </div>
-</div>
-
 <!-- Edit profile panel -->
 <div class="overlay-scrim" id="profileScrim"></div>
 <div class="slide-panel" id="profilePanel" role="dialog" aria-label="Edit Profile">
@@ -325,15 +348,15 @@
     <form id="editProfileForm">
       <div class="field" style="margin-bottom:16px;">
         <label for="editFullName" style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:6px;">Full Name</label>
-        <input type="text" id="editFullName" class="input-wrap" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border,#333);background:var(--bg-card,#1e1e1e);color:inherit;" required />
+        <input type="text" id="editFullName" class="input-wrap" style="width:100%;padding:10px 12px;border-radius:var(--rounded-md);border:1px solid var(--hairline);background:var(--canvas);color:inherit;" required />
       </div>
       <div class="field" style="margin-bottom:16px;">
         <label for="editUsername" style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:6px;">Username</label>
-        <input type="text" id="editUsername" class="input-wrap" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border,#333);background:var(--bg-card,#1e1e1e);color:inherit;" required />
+        <input type="text" id="editUsername" class="input-wrap" style="width:100%;padding:10px 12px;border-radius:var(--rounded-md);border:1px solid var(--hairline);background:var(--canvas);color:inherit;" required />
       </div>
       <div class="field" style="margin-bottom:20px;">
         <label for="editStatus" style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:6px;">Status Message</label>
-        <input type="text" id="editStatus" class="input-wrap" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border,#333);background:var(--bg-card,#1e1e1e);color:inherit;" />
+        <input type="text" id="editStatus" class="input-wrap" style="width:100%;padding:10px 12px;border-radius:var(--rounded-md);border:1px solid var(--hairline);background:var(--canvas);color:inherit;" />
       </div>
       <button type="submit" class="btn btn-primary btn-block" id="saveProfileBtn">Save changes</button>
     </form>
@@ -496,12 +519,6 @@
     }).replace('class="avatar-ring', 'id="myAvatar" class="avatar-ring');
     document.getElementById("myName").textContent = myProfile?.name || "You";
     document.getElementById("myStatus").textContent = myProfile?.status || "Online";
-
-    document.getElementById("menuAvatar").outerHTML = avatarRingHTML({
-      photoURL: myProfile?.profileImage, name: myProfile?.name || me.email, online: true, size: 44
-    }).replace('class="avatar-ring', 'id="menuAvatar" class="avatar-ring');
-    document.getElementById("menuName").textContent = myProfile?.name || "You";
-    document.getElementById("menuStatus").textContent = myProfile?.status || "Online";
 
     document.getElementById("settingsAvatar").outerHTML = avatarRingHTML({
       photoURL: myProfile?.profileImage, name: myProfile?.name || me.email, online: true, size: 48
@@ -1220,25 +1237,10 @@
   // Bottom nav: New chat
   document.getElementById("navNewChatBtn").addEventListener("click", openNewChat);
 
-  // Bottom nav: Menu (theme toggle + logout, since the desktop rail is hidden on phones)
-  const menuPanel = document.getElementById("menuPanel");
-  const menuScrim = document.getElementById("menuScrim");
-  document.getElementById("navMenuBtn").addEventListener("click", () => {
-    menuPanel.classList.add("open");
-    menuScrim.classList.add("open");
-  });
-  const closeMenu = () => { menuPanel.classList.remove("open"); menuScrim.classList.remove("open"); };
-  document.getElementById("closeMenuPanel").addEventListener("click", closeMenu);
-  menuScrim.addEventListener("click", closeMenu);
-
-  document.getElementById("menuThemeToggle").addEventListener("click", () => {
-    const t = toggleTheme();
-    document.querySelector("#themeToggle i").className = t === "dark" ? "fa-solid fa-moon" : "fa-solid fa-sun";
-  });
-  document.getElementById("menuLogoutBtn").addEventListener("click", async () => {
-    await logoutUser();
-    window.location.href = "index.html";
-  });
+  // Bottom nav: Settings — desktop rail (and its gear button) is hidden on phones,
+  // so this is the only entry point into Settings on mobile. Reuses the same panel/logic
+  // as the desktop settingsBtn, so every setting is available on every device.
+  document.getElementById("navMenuBtn").addEventListener("click", openSettings);
 </script>
 </body>
 </html>

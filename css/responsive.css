@@ -1,268 +1,359 @@
-/* =========================================================
-   I-Chat — Responsive Rules
-   Figma Design System Breakpoints & Touch Targets
-   ========================================================= */
+/* ==========================================================
+   RESPONSIVE DESIGN
+========================================================== */
 
-/* ---- Tablet (960px) ---- */
-@media (max-width: 960px) {
-  .app-shell {
-    grid-template-columns: 70px 300px 1fr;
+/* ---------- Large Tablet ---------- */
+@media (max-width: 1024px) {
+
+  .app-shell{
+    grid-template-columns:70px 280px 1fr;
   }
 
-  .app-shell.sidebar-collapsed {
-    grid-template-columns: 70px 0 1fr;
+  .msg-row{
+    max-width:80%;
   }
 
-  .msg-row {
-    max-width: 75%;
-  }
 }
 
-/* ---- Mobile-L (768px): Color blocks go full-bleed ---- */
-@media (max-width: 768px) {
-  .auth-brand {
-    border-radius: 0;
+
+/* ---------- Tablet ---------- */
+@media (max-width:900px){
+
+  .app-shell{
+    grid-template-columns:65px 250px 1fr;
   }
+
+  .sidebar-user-name,
+  .chat-header-info h3{
+    font-size:15px;
+  }
+
 }
 
-/* ---- Small tablet / large phone (780px): Collapse sidebar & chat ---- */
-@media (max-width: 780px) {
-  .app-shell {
-    grid-template-columns: 1fr;
+
+/* ---------- Mobile Layout ---------- */
+@media (max-width:768px){
+
+  html,
+  body{
+    overflow-x:hidden;
   }
 
-  .app-shell.sidebar-collapsed {
-    grid-template-columns: 1fr;
+  .app-shell{
+    display:block;
+    width:100%;
+    height:100dvh;
   }
 
-  .app-shell.sidebar-collapsed .app-sidebar {
-    opacity: 1;
-    pointer-events: auto;
+  .app-rail{
+    display:none;
   }
 
-  /* Sidebar toggle is a desktop/tablet control; mobile uses the bottom nav */
-  .sidebar-toggle-btn {
-    display: none;
+  .sidebar-toggle-btn{
+    display:none;
   }
 
-  .app-rail {
-    display: none;
+  .bottom-nav{
+    display:flex;
   }
 
-  .bottom-nav {
-    display: flex;
+  /* Sidebar */
+
+  .app-sidebar{
+
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100dvh;
+
+    z-index:100;
+
+    transform:translateX(0);
+    transition:.35s ease;
+
+    padding-bottom:80px;
   }
 
-  .app-sidebar {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    padding-bottom: calc(60px + env(safe-area-inset-bottom));
-    transform: translateX(0);
-    transition: transform 0.3s var(--ease);
+  .app-shell.chat-open .app-sidebar{
+
+    transform:translateX(-100%);
+
   }
 
-  .app-shell.chat-open .app-sidebar {
-    transform: translateX(-110%);
+  /* Chat */
+
+  .chat-window{
+
+    position:fixed;
+
+    inset:0;
+
+    width:100%;
+    height:100dvh;
+
+    background:var(--surface);
+
+    transform:translateX(100%);
+
+    transition:.35s ease;
+
+    z-index:101;
+
   }
 
-  .chat-window {
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    transform: translateX(100%);
-    transition: transform 0.3s var(--ease);
+  .app-shell.chat-open .chat-window{
+
+    transform:translateX(0);
+
   }
 
-  .app-shell.chat-open .chat-window {
-    transform: translateX(0);
+  .chat-back-btn{
+
+    display:flex !important;
+
+    align-items:center;
+
+    justify-content:center;
+
   }
 
-  .app-shell.chat-open .bottom-nav {
-    display: none;
+  /* Header */
+
+  .chat-header{
+
+    padding:14px 16px;
+
   }
 
-  .chat-back-btn {
-    display: inline-flex !important;
+  /* Messages */
+
+  .chat-messages{
+
+    padding:16px;
+
   }
 
-  .msg-row {
-    max-width: 85%;
+  .msg-row{
+
+    max-width:88%;
+
   }
 
-  .chat-composer {
-    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  /* Composer */
+
+  .chat-composer{
+
+    padding:10px 14px calc(12px + env(safe-area-inset-bottom));
+
+    gap:8px;
+
   }
+
+  .chat-composer input{
+
+    min-height:46px;
+
+    font-size:16px;
+
+  }
+
 }
 
-.chat-back-btn {
-  display: none;
-  margin-right: 4px;
+
+/* ---------- Small Phones ---------- */
+@media (max-width:560px){
+
+  .chat-header{
+
+    padding:12px;
+
+  }
+
+  .chat-avatar{
+
+    width:42px;
+    height:42px;
+
+  }
+
+  .chat-header-info h3{
+
+    font-size:15px;
+
+  }
+
+  .chat-header-info p{
+
+    font-size:12px;
+
+  }
+
+  .msg-row{
+
+    max-width:92%;
+
+    font-size:15px;
+
+  }
+
+  .chat-messages{
+
+    padding:14px 10px;
+
+  }
+
+  .message{
+
+    padding:10px 12px;
+
+  }
+
+  .chat-composer{
+
+    padding:10px;
+
+  }
+
+  .chat-composer input{
+
+    font-size:16px;
+
+  }
+
+  .sidebar-header{
+
+    padding:18px 16px;
+
+  }
+
+  .sidebar-search{
+
+    padding:0 16px;
+
+  }
+
+  .sidebar-tabs{
+
+    padding:0 16px;
+
+  }
+
+  .conversation{
+
+    padding:10px 14px;
+
+  }
+
 }
 
-/* ---- Messenger-style bottom tab bar (mobile only) ---- */
-.bottom-nav {
-  display: none;
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 60;
-  height: 60px;
-  padding-bottom: env(safe-area-inset-bottom);
-  background: var(--canvas);
-  border-top: 1px solid var(--hairline);
-  align-items: center;
-  justify-content: space-around;
+
+/* ---------- Extra Small ---------- */
+@media (max-width:400px){
+
+  .chat-header-info p{
+
+    display:none;
+
+  }
+
+  .msg-row{
+
+    max-width:96%;
+
+  }
+
+  .chat-avatar{
+
+    width:38px;
+    height:38px;
+
+  }
+
+  .conversation-avatar{
+
+    width:44px;
+    height:44px;
+
+  }
+
+  .bottom-nav{
+
+    height:65px;
+
+  }
+
 }
 
-.bottom-nav-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  color: var(--ink);
-  opacity: 0.4;
-  font-size: 20px;
-  position: relative;
-  padding: 6px 14px;
-  border-radius: var(--rounded-md);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: opacity 0.2s var(--ease);
+
+/* ---------- Tiny Devices ---------- */
+@media (max-width:320px){
+
+  .msg-row{
+
+    max-width:100%;
+
+  }
+
+  .display-xl{
+
+    font-size:36px;
+
+  }
+
+  .display-lg{
+
+    font-size:30px;
+
+  }
+
 }
 
-.bottom-nav-btn:hover {
-  opacity: 0.6;
+
+/* ==========================================================
+   TOUCH DEVICES
+========================================================== */
+
+@media (pointer:coarse){
+
+  .btn,
+  button{
+
+    min-height:44px;
+
+  }
+
+  .btn-icon{
+
+    width:44px;
+    height:44px;
+
+  }
+
+  input,
+  textarea,
+  select{
+
+    min-height:48px;
+
+    font-size:16px;
+
+  }
+
 }
 
-.bottom-nav-btn.active {
-  color: var(--primary);
-  opacity: 1;
-}
 
-.bottom-nav-btn .rail-badge {
-  position: absolute;
-  top: -2px;
-  right: 6px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: var(--rounded-full);
-  background: var(--primary);
-  color: var(--on-primary);
-  font-size: 10px;
-  font-weight: 540;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* ==========================================================
+   ACCESSIBILITY
+========================================================== */
 
-/* ---- Mobile (560px) ---- */
-@media (max-width: 560px) {
-  .chat-header {
-    padding: var(--spacing-sm) var(--spacing-md);
+@media (prefers-reduced-motion:reduce){
+
+  *{
+
+    animation:none !important;
+    transition:none !important;
+    scroll-behavior:auto !important;
+
   }
 
-  .chat-messages {
-    padding: var(--spacing-md) 4%;
-  }
-
-  .chat-composer {
-    padding-left: var(--spacing-md);
-    padding-right: var(--spacing-md);
-    padding-top: var(--spacing-sm);
-  }
-
-  .sidebar-header {
-    padding: var(--spacing-lg) var(--spacing-md) var(--spacing-sm);
-  }
-
-  .sidebar-search,
-  .sidebar-tabs {
-    padding-left: var(--spacing-md);
-    padding-right: var(--spacing-md);
-  }
-
-  .auth-form-panel {
-    padding: var(--spacing-lg);
-  }
-
-  .form-row-split {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-
-  .slide-panel {
-    width: 100%;
-    right: -100%;
-  }
-
-  /* Display-xl reduces from 86px to ~48px */
-  .display-xl {
-    font-size: 48px;
-    letter-spacing: -0.96px;
-  }
-
-  .display-lg {
-    font-size: 40px;
-    letter-spacing: -0.64px;
-  }
-
-  /* Pill CTAs go full-width */
-  .btn-block {
-    width: 100%;
-  }
-}
-
-/* ---- Mobile-XS (559px): Footer collapses ---- */
-@media (max-width: 559px) {
-  .auth-brand-bottom {
-    flex-direction: column;
-    gap: var(--spacing-md);
-  }
-}
-
-/* ---- Very small (360px) ---- */
-@media (max-width: 360px) {
-  .msg-row {
-    max-width: 92%;
-  }
-
-  .chat-header-info .subtext {
-    display: none;
-  }
-}
-
-/* ---- Touch Targets (Minimum 44px) ---- */
-@media (pointer: coarse) {
-  /* Pill buttons maintain 44px tap height */
-  .btn {
-    min-height: 44px;
-  }
-
-  /* Circular icon buttons grow to 44px on touch */
-  .btn-icon {
-    width: 44px;
-    height: 44px;
-  }
-
-  /* Form input minimum tap target 48px */
-  .field input,
-  .field select {
-    min-height: 48px;
-  }
-
-  /* Bottom nav buttons */
-  .bottom-nav-btn {
-    min-height: 44px;
-    min-width: 44px;
-  }
-
-  /* Rail buttons */
-  .rail-btn {
-    width: 48px;
-    height: 48px;
-  }
 }

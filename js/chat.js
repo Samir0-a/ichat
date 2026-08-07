@@ -182,8 +182,10 @@ export async function sendMessage(chatId, senderId, receiverId, text, replyTo = 
   const chatSnap = await getDoc(chatRef);
   const currentUnread = chatSnap.exists() ? (chatSnap.data().unread || {}) : {};
 
+  const preview = type === "image" ? "📷 Photo" : clean;
+
   await updateDoc(chatRef, {
-    lastMessage: clean,
+    lastMessage: preview,
     lastMessageSender: senderId,
     updatedAt: serverTimestamp(),
     [`unread.${receiverId}`]: (currentUnread[receiverId] || 0) + 1,

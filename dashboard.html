@@ -168,9 +168,21 @@
           <div class="subtext" id="headerSubtext">—</div>
         </div>
         <div class="chat-header-actions">
-          <button class="btn-icon" aria-label="Search in conversation"><i class="fa-solid fa-magnifying-glass"></i></button>
-          <button class="btn-icon" aria-label="More options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+          <button class="btn-icon" id="chatSearchBtn" aria-label="Search in conversation"><i class="fa-solid fa-magnifying-glass"></i></button>
+          <button class="btn-icon" id="chatMoreBtn" aria-label="More options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+          <div class="dropdown-menu" id="chatMoreMenu">
+            <button type="button" id="chatMoreSearch"><i class="fa-solid fa-magnifying-glass"></i> Search in chat</button>
+            <button type="button" class="danger" id="chatMoreBlock"><i class="fa-solid fa-user-slash"></i> Block user</button>
+          </div>
         </div>
+      </div>
+
+      <div class="chat-search-bar" id="chatSearchBar">
+        <input type="text" id="chatSearchInChatInput" placeholder="Search in this conversation" aria-label="Search in this conversation" />
+        <span class="search-count" id="chatSearchCount"></span>
+        <button class="btn-icon" id="chatSearchPrevBtn" aria-label="Previous match"><i class="fa-solid fa-chevron-up"></i></button>
+        <button class="btn-icon" id="chatSearchNextBtn" aria-label="Next match"><i class="fa-solid fa-chevron-down"></i></button>
+        <button class="btn-icon" id="chatSearchCloseBtn" aria-label="Close search"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div class="chat-messages" id="messagesContainer"></div>
@@ -181,8 +193,9 @@
           <button class="btn-icon" id="cancelReplyBtn" aria-label="Cancel reply"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="composer-bar">
-          <button class="btn-icon" aria-label="Attach file"><i class="fa-solid fa-paperclip"></i></button>
-          <button class="btn-icon" aria-label="Add emoji"><i class="fa-regular fa-face-smile"></i></button>
+          <input type="file" id="attachFileInput" accept="image/*" class="hidden" />
+          <button class="btn-icon" id="attachBtn" aria-label="Attach file"><i class="fa-solid fa-paperclip"></i></button>
+          <button class="btn-icon" id="emojiBtn" aria-label="Add emoji"><i class="fa-regular fa-face-smile"></i></button>
           <textarea id="messageInput" rows="1" placeholder="Type a message" aria-label="Message"></textarea>
           <button class="send-btn" id="sendBtn" aria-label="Send message"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
@@ -364,7 +377,6 @@
 </div>
 
 <script type="module">
-  console.log("[I-Chat] Script module loaded");
   import { requireAuth, logoutUser, updateUserProfile, sendResetEmail } from "./js/auth.js";
   import {
     getUserProfile, listenToUser, searchUsers, listenToChatList,
@@ -373,13 +385,14 @@
   } from "./js/chat.js";
   import {
     listenToFriends, listenToIncomingRequests, listenToOutgoingRequests, listenToBlocked,
-    sendFriendRequest, acceptFriendRequest, declineFriendRequest, cancelFriendRequest,
+    sendFriendRequest, acceptFriendRequest, declineFriendRequest,
     removeFriend, blockUser, unblockUser
   } from "./js/friends.js";
   import {
     showToast, initTheme, toggleTheme, avatarRingHTML, formatTime, formatDay,
-    formatLastSeen, escapeHTML, debounce, initials
+    formatLastSeen, escapeHTML, debounce
   } from "./js/utils.js";
+  import { uploadToCloudinary } from "./js/cloudinary-config.js";
 
   initTheme();
 
@@ -591,6 +604,13 @@
   }
 
   async function openChat(chatId, otherUid) {
+    if (chatId !== activeChatId) {
+      chatSearchBar.classList.remove("open");
+      searchMatches = [];
+      searchIndex = -1;
+      closeEmojiPopover();
+      closeMoreMenu();
+    }
     activeChatId = chatId;
     activeOtherUid = otherUid;
     document.getElementById("appShell").classList.add("chat-open");
@@ -610,6 +630,7 @@
     unsubMessages = listenToMessages(chatId, (msgs) => {
       renderMessages(msgs, other);
       markMessagesRead(chatId, me.uid);
+      if (chatSearchBar.classList.contains("open") && chatSearchInput.value.trim()) applySearchHighlight();
     });
   }
 
@@ -646,9 +667,11 @@
         <div class="msg-row ${isOwn ? "own" : ""} ${grouped ? "grouped" : ""}" data-msg-id="${msg.id}">
           ${avatarRingHTML({ photoURL: senderProfile?.profileImage, name: senderProfile?.name, online: false, size: 30 })}
           <div>
-            <div class="msg-bubble">
+            <div class="msg-bubble ${msg.type === "image" ? "msg-image" : ""}">
               ${msg.replyTo ? `<div class="msg-reply-preview">${escapeHTML(msg.replyTo)}</div>` : ""}
-              <span>${msg.type === "deleted" ? `<i>${escapeHTML(msg.message)}</i>` : escapeHTML(msg.message)}</span>
+              ${msg.type === "image"
+                ? `<img src="${escapeHTML(msg.message)}" alt="Photo" loading="lazy" onclick="window.open('${escapeHTML(msg.message)}', '_blank')" />`
+                : `<span>${msg.type === "deleted" ? `<i>${escapeHTML(msg.message)}</i>` : escapeHTML(msg.message)}</span>`}
               <div class="msg-meta">
                 ${msg.edited ? "<span>edited</span>" : ""}
                 <span>${formatTime(msg.timestamp)}</span>
@@ -657,7 +680,7 @@
             </div>
             <div class="msg-actions">
               <button class="msg-reply" title="Reply"><i class="fa-solid fa-reply"></i></button>
-              <button class="msg-copy" title="Copy"><i class="fa-regular fa-copy"></i></button>
+              ${msg.type !== "image" ? '<button class="msg-copy" title="Copy"><i class="fa-regular fa-copy"></i></button>' : ""}
               ${isOwn && msg.type !== "deleted" ? '<button class="msg-delete" title="Delete"><i class="fa-regular fa-trash-can"></i></button>' : ""}
             </div>
           </div>
@@ -675,7 +698,7 @@
         navigator.clipboard.writeText(msg.message);
         showToast("Message copied", "success", 1800);
       });
-      row.querySelector(".msg-reply")?.addEventListener("click", () => setReplyTarget(msg.message));
+      row.querySelector(".msg-reply")?.addEventListener("click", () => setReplyTarget(msg.type === "image" ? "📷 Photo" : msg.message));
       row.querySelector(".msg-delete")?.addEventListener("click", async () => {
         await deleteMessageForEveryone(activeChatId, id);
         showToast("Message deleted", "info", 1800);
@@ -734,6 +757,179 @@
   document.getElementById("chatBackBtn").addEventListener("click", () => {
     document.getElementById("appShell").classList.remove("chat-open");
   });
+
+  // ---------- Attach file (photo) ----------
+  const attachBtn = document.getElementById("attachBtn");
+  const attachFileInput = document.getElementById("attachFileInput");
+  attachBtn.addEventListener("click", () => {
+    if (!activeChatId) return;
+    attachFileInput.click();
+  });
+  attachFileInput.addEventListener("change", async () => {
+    const file = attachFileInput.files[0];
+    attachFileInput.value = "";
+    if (!file || !activeChatId) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("Only image files can be attached right now.", "error");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      showToast("Image is too large (max 8MB).", "error");
+      return;
+    }
+    attachBtn.disabled = true;
+    attachBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    try {
+      const url = await uploadToCloudinary(file, "chat-attachments");
+      await sendMessage(activeChatId, me.uid, activeOtherUid, url, null, "image");
+    } catch (err) {
+      showToast(err.message || "Photo failed to send.", "error");
+    } finally {
+      attachBtn.disabled = false;
+      attachBtn.innerHTML = '<i class="fa-solid fa-paperclip"></i>';
+    }
+  });
+
+  // ---------- Emoji picker ----------
+  const EMOJI_SET = ["😀","😂","😍","😅","😊","🙂","😉","😎","🤔","😴","😭","😢","😡","🥳","🤩","😱","👍","👎","👏","🙏","💪","🤝","👋","❤️","🔥","🎉","✨","💯","😇","🥰","😜","🤗","😐","🙄","😬","🤝","🎂","☕","🍕","⚽"];
+  const emojiBtn = document.getElementById("emojiBtn");
+  let emojiPopoverEl = null;
+
+  function closeEmojiPopover() {
+    if (emojiPopoverEl) { emojiPopoverEl.remove(); emojiPopoverEl = null; }
+  }
+  function openEmojiPopover() {
+    if (emojiPopoverEl || !activeChatId) return;
+    closeMoreMenu();
+    emojiPopoverEl = document.createElement("div");
+    emojiPopoverEl.className = "emoji-popover";
+    emojiPopoverEl.innerHTML = EMOJI_SET.map(e => `<button type="button">${e}</button>`).join("");
+    emojiPopoverEl.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const start = input.selectionStart ?? input.value.length;
+        const end = input.selectionEnd ?? input.value.length;
+        input.value = input.value.slice(0, start) + btn.textContent + input.value.slice(end);
+        input.focus();
+        input.selectionStart = input.selectionEnd = start + btn.textContent.length;
+      });
+    });
+    document.querySelector(".composer-bar").appendChild(emojiPopoverEl);
+  }
+  emojiBtn.addEventListener("click", () => {
+    if (emojiPopoverEl) closeEmojiPopover();
+    else openEmojiPopover();
+  });
+
+  // ---------- More options dropdown (search / block) ----------
+  const chatMoreBtn = document.getElementById("chatMoreBtn");
+  const chatMoreMenu = document.getElementById("chatMoreMenu");
+  function closeMoreMenu() { chatMoreMenu.classList.remove("open"); }
+  chatMoreBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeEmojiPopover();
+    chatMoreMenu.classList.toggle("open");
+  });
+  document.getElementById("chatMoreBlock").addEventListener("click", async () => {
+    closeMoreMenu();
+    if (!activeOtherUid) return;
+    const other = userCache[activeOtherUid];
+    if (!window.confirm(`Block ${other?.name || "this user"}? They won't be able to message you, and this chat will close.`)) return;
+    try {
+      await blockUser(me.uid, activeOtherUid);
+      showToast("User blocked", "info", 2000);
+      document.getElementById("appShell").classList.remove("chat-open");
+      document.getElementById("emptyState").classList.remove("hidden");
+      document.getElementById("activeChat").classList.add("hidden");
+      activeChatId = null;
+      activeOtherUid = null;
+    } catch (err) {
+      showToast(err.message || "Couldn't block user.", "error");
+    }
+  });
+
+  // Close popovers on outside click
+  document.addEventListener("click", (e) => {
+    if (emojiPopoverEl && !emojiPopoverEl.contains(e.target) && e.target !== emojiBtn && !emojiBtn.contains(e.target)) closeEmojiPopover();
+    if (!chatMoreBtn.contains(e.target) && !chatMoreMenu.contains(e.target)) closeMoreMenu();
+  });
+
+  // ---------- Search in conversation ----------
+  const chatSearchBar = document.getElementById("chatSearchBar");
+  const chatSearchInput = document.getElementById("chatSearchInChatInput");
+  const chatSearchCount = document.getElementById("chatSearchCount");
+  let searchMatches = [];
+  let searchIndex = -1;
+
+  function highlightText(text, query) {
+    if (!query) return escapeHTML(text);
+    const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`(${safeQuery})`, "gi");
+    return text.split(re).map((part, i) => (i % 2 === 1 ? `<mark>${escapeHTML(part)}</mark>` : escapeHTML(part))).join("");
+  }
+
+  function clearSearchHighlights() {
+    document.querySelectorAll("#messagesContainer .msg-bubble:not(.msg-image) > span").forEach(span => {
+      span.innerHTML = escapeHTML(span.textContent);
+    });
+    searchMatches = [];
+    searchIndex = -1;
+    chatSearchCount.textContent = "";
+  }
+
+  function applySearchHighlight() {
+    const query = chatSearchInput.value.trim();
+    searchMatches = [];
+    document.querySelectorAll("#messagesContainer .msg-bubble:not(.msg-image) > span").forEach(span => {
+      const text = span.textContent;
+      if (query && text.toLowerCase().includes(query.toLowerCase())) {
+        span.innerHTML = highlightText(text, query);
+        searchMatches.push(span);
+      } else {
+        span.innerHTML = escapeHTML(text);
+      }
+    });
+    searchIndex = searchMatches.length ? 0 : -1;
+    updateSearchNav();
+    if (searchMatches.length) goToMatch(0);
+  }
+
+  function updateSearchNav() {
+    chatSearchCount.textContent = searchMatches.length ? `${searchIndex + 1}/${searchMatches.length}` : (chatSearchInput.value ? "0/0" : "");
+  }
+
+  function goToMatch(idx) {
+    if (!searchMatches.length) return;
+    searchMatches.forEach(s => s.querySelectorAll("mark").forEach(m => m.classList.remove("current-match")));
+    searchIndex = (idx + searchMatches.length) % searchMatches.length;
+    const span = searchMatches[searchIndex];
+    span.querySelectorAll("mark").forEach(m => m.classList.add("current-match"));
+    span.closest(".msg-row")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    updateSearchNav();
+  }
+
+  function openChatSearch() {
+    if (!activeChatId) return;
+    closeMoreMenu();
+    closeEmojiPopover();
+    chatSearchBar.classList.add("open");
+    chatSearchInput.value = "";
+    chatSearchInput.focus();
+  }
+  function closeChatSearch() {
+    chatSearchBar.classList.remove("open");
+    clearSearchHighlights();
+  }
+
+  document.getElementById("chatSearchBtn").addEventListener("click", openChatSearch);
+  document.getElementById("chatMoreSearch").addEventListener("click", () => { closeMoreMenu(); openChatSearch(); });
+  document.getElementById("chatSearchCloseBtn").addEventListener("click", closeChatSearch);
+  chatSearchInput.addEventListener("input", debounce(applySearchHighlight, 200));
+  chatSearchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); goToMatch(e.shiftKey ? searchIndex - 1 : searchIndex + 1); }
+    if (e.key === "Escape") closeChatSearch();
+  });
+  document.getElementById("chatSearchNextBtn").addEventListener("click", () => goToMatch(searchIndex + 1));
+  document.getElementById("chatSearchPrevBtn").addEventListener("click", () => goToMatch(searchIndex - 1));
 
   // New chat panel
   const newChatPanel = document.getElementById("newChatPanel");

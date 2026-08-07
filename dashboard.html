@@ -496,6 +496,12 @@
   }
 
   requireAuth(async (user) => {
+    // Hide "dashboard.html" from the address bar — rewrites the visible URL
+    // to the folder root without reloading the page or losing any state.
+    if (location.pathname.endsWith("dashboard.html")) {
+      history.replaceState(null, "", location.pathname.replace(/dashboard\.html$/, ""));
+    }
+
     me = user;
     myProfile = await getUserProfile(user.uid);
     renderMyProfile();
